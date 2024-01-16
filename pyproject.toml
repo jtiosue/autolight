@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["autolight"]
+
+[project]
+name = "autolight"
+authors = [
+    {name = "Joseph T. Iosue", email = "jtiosue@gmail.com"},
+]
+description = "A package for automatically making compilation highlight videos"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "Apache Software License 2.0"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+dependencies = ["moviepy"]
+version = "0.0.0"
+
+[project.urls]
+"Source" = "https://github.com/jtiosue/autolight"
