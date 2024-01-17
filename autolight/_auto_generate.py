@@ -8,12 +8,18 @@ def auto_generate_from_csv(filename: str) -> None:
         if len(line) == 1:
             line = line[0]
             if line["kind"] == "audio":
-                if "ticks" in line:
-                    line["ticks"] = eval(line["ticks"])
-                    offset = line["ticks"][0]
-                    for i in range(1, len(line["ticks"])):
-                        line["ticks"][i] += offset
-                    line["ticks"][0] = 0
+                if "majorticks" in line:
+                    line["majorticks"] = eval(line["majorticks"])
+                    offset = line["majorticks"][0]
+                    for i in range(1, len(line["majorticks"])):
+                        line["majorticks"][i] += offset
+                    line["majorticks"][0] = 0
+                if "minorticks" in line:
+                    line["minorticks"] = eval(line["minorticks"])
+                    offset = line["minorticks"][0]
+                    for i in range(1, len(line["minorticks"])):
+                        line["minorticks"][i] += offset
+                    line["minorticks"][0] = 0
                 audio.append(line)
             else:
                 start = line.pop("start", 0)
@@ -42,10 +48,12 @@ def auto_generate_from_csv(filename: str) -> None:
                 video[-1].append(l)
 
     # get all possible transition points
-    ticks, prev = [], 0.0
+    majorticks, minorticks, prev = [-100], [-100], 0.0
     for line in audio:
-        ticks.extend([prev + x for x in line["ticks"]])
-        line.pop("ticks")
+        majorticks.extend([prev + x for x in line.get("majorticks", [])])
+        line.pop("majorticks")
+        minorticks.extend([prev + x for x in line.get("minorticks", [])])
+        line.pop("minorticks")
         prev += create_mp_element(line).duration
     total_audio_duration = prev
 
@@ -87,12 +95,21 @@ def auto_generate_from_csv(filename: str) -> None:
         if isinstance(line, list):
             lmax = max(line, key=lambda x: x["end"] - x["start"])
             t = min(
-                ticks,
-                key=lambda x: abs(current_time + lmax["end"] - lmax["start"] - x) + 1000 * int(x + lmax["start"] - current_time > lmax["videoend"]),
+                majorticks,
+                key=lambda x: abs(current_time + lmax["end"] - lmax["start"] - x)
+                + 1000 * int(x + lmax["start"] - current_time > lmax["videoend"]),
             )
-            # if there are no ticks nearby, just go with the fixed point
-            if abs(current_time + lmax["end"] - lmax["start"] - t) <= 5:
+            tminor = min(
+                minorticks + majorticks,
+                key=lambda x: abs(current_time + lmax["end"] - lmax["start"] - x)
+                + 1000 * int(x + lmax["start"] - current_time > lmax["videoend"]),
+            )
+
+            if abs(current_time + lmax["end"] - lmax["start"] - t) <= 3:
                 lmax["end"] = t + lmax["start"] - current_time
+            elif abs(current_time + lmax["end"] - lmax["start"] - tminor) <= 5:
+                lmax["end"] = tminor + lmax["start"] - current_time
+            # else: if there are no ticks nearby, just go with the fixed point
             current_time += lmax["end"] - lmax["start"]
             for l in line:
                 l["end"] = min(l["start"] + lmax["end"] - lmax["start"], l["end"])
@@ -100,12 +117,21 @@ def auto_generate_from_csv(filename: str) -> None:
                     l["duration"] = l["end"] - l["start"]
         else:
             t = min(
-                ticks,
-                key=lambda x: abs(current_time + line["end"] - line["start"] - x) + 1000 * int(x + line["start"] - current_time > line["videoend"]),
+                majorticks,
+                key=lambda x: abs(current_time + line["end"] - line["start"] - x)
+                + 1000 * int(x + line["start"] - current_time > line["videoend"]),
             )
-            # if there are no ticks nearby, just go with the fixed point
-            if abs(current_time + line["end"] - line["start"] - t) <= 5:
+            tminor = min(
+                minorticks + majorticks,
+                key=lambda x: abs(current_time + line["end"] - line["start"] - x)
+                + 1000 * int(x + line["start"] - current_time > line["videoend"]),
+            )
+
+            if abs(current_time + line["end"] - line["start"] - t) <= 3:
                 line["end"] = t + line["start"] - current_time
+            elif abs(current_time + line["end"] - line["start"] - tminor) <= 5:
+                line["end"] = tminor + line["start"] - current_time
+            # else: if there are no ticks nearby, just go with the fixed point
             if "duration" in line:
                 line["duration"] = line["end"] - line["start"]
             current_time += line["end"] - line["start"]

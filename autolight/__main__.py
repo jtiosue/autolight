@@ -3,14 +3,18 @@ import sys
 
 if __name__ == "__main__":
     arguments = sys.argv[1:]
-    if len(arguments) == 2 and arguments[0].strip() in ("generate", "autogenerate"):
+    if len(arguments) == 2 and arguments[0].strip() in (
+        "generate",
+        "autogenerate",
+        "audioticks",
+    ):
         command, filename = arguments[0].strip(), arguments[1].strip()
         if command == "generate":
             generate_from_csv(filename)
-        else:
+        elif command == "autogenerate":
             auto_generate_from_csv(filename)
-    elif len(arguments) == 1 and arguments[0] == "audioticks":
-        audioticks()
+        elif command == "audioticks":
+            audioticks(filename)
     else:
         print(
             "USAGE: python -m autolight [command] [file] \n"

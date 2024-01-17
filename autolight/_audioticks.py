@@ -1,12 +1,13 @@
 import tkinter as tk
 import time
+from playsound import playsound
 
 
-def audioticks():
+def audioticks(filename=None):
     root = tk.Tk()
     root.title("Audioticks")
     root.geometry("500x500")
-    tk.Label(root, text="Press z").pack()
+    tk.Label(root, text="Press q").pack()
 
     def close():
         print(str(ticks))
@@ -21,10 +22,12 @@ def audioticks():
 
     def click(t0=[]):
         if not t0:
+            if filename:
+                playsound(filename, block=False)
             t0.append(time.time())
         ticks.append(round(time.time() - t0[0], 2))
         v.set(str(ticks))
 
-    root.bind("<z>", lambda e: click())
+    root.bind("<q>", lambda e: click())
 
     root.mainloop()
