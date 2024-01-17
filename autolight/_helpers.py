@@ -57,8 +57,10 @@ def create_mp_element(line):
 
     if "duration" in line:
         mp_elem = mp_elem.set_duration(line["duration"])
-    if "start" in line:
-        mp_elem = mp_elem.subclip(line["start"], line["end"])
+    if "start" in line or "end" in line:
+        start = line["start"] if "start" in line else 0
+        end = line["end"] if "end" in line else mp_elem.duration - start
+        mp_elem = mp_elem.subclip(start, end)
     if "fadein" in line:
         fadein = afx.audio_fadein if line["kind"] == "audio" else vfx.fadein
         mp_elem = mp_elem.fx(fadein, line["fadein"])

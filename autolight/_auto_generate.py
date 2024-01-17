@@ -10,13 +10,19 @@ def auto_generate_from_csv(filename: str) -> None:
             if line["kind"] == "audio":
                 if "ticks" in line:
                     line["ticks"] = eval(line["ticks"])
+                    offset = line["ticks"][0]
+                    for i in range(1, len(line["ticks"])):
+                        line["ticks"][i] += offset
+                    line["ticks"][0] = 0
                 audio.append(line)
             else:
                 start = line.pop("start", 0)
                 if "end" not in line:
-                    l["end"] = start + l.get(
-                        "duration", create_mp_element(l).duration - start
+                    line["end"] = start + line.get(
+                        "duration", create_mp_element(line).duration - start
                     )
+                # line["end"] will get modified later, but videoend does not
+                line["videoend"] = line["end"]
                 line["start"] = start
                 if "trim" not in line:
                     line["trim"] = "symmetric"
@@ -29,6 +35,7 @@ def auto_generate_from_csv(filename: str) -> None:
                     l["end"] = start + l.get(
                         "duration", create_mp_element(l).duration - start
                     )
+                l["videoend"] = l["end"]
                 l["start"] = start
                 if "trim" not in l:
                     l["trim"] = "symmetric"
@@ -64,7 +71,7 @@ def auto_generate_from_csv(filename: str) -> None:
 
     total_nontrim_video_length = total_video_length - total_trim_video_length
     # shrink trimmable videos by r
-    r = (total_video_length - total_nontrim_video_length) / total_trim_video_length
+    r = (total_audio_duration - total_nontrim_video_length) / total_trim_video_length
     for line in video:
         if isinstance(line, list):
             for l in line:
@@ -81,9 +88,11 @@ def auto_generate_from_csv(filename: str) -> None:
             lmax = max(line, key=lambda x: x["end"] - x["start"])
             t = min(
                 ticks,
-                key=lambda x: abs(current_time + lmax["end"] - lmax["start"] - x - 2),
+                key=lambda x: abs(current_time + lmax["end"] - lmax["start"] - x) + 1000 * int(x + lmax["start"] - current_time > lmax["videoend"]),
             )
-            lmax["end"] = t + lmax["start"] - current_time
+            # if there are no ticks nearby, just go with the fixed point
+            if abs(current_time + lmax["end"] - lmax["start"] - t) <= 5:
+                lmax["end"] = t + lmax["start"] - current_time
             current_time += lmax["end"] - lmax["start"]
             for l in line:
                 l["end"] = min(l["start"] + lmax["end"] - lmax["start"], l["end"])
@@ -92,9 +101,11 @@ def auto_generate_from_csv(filename: str) -> None:
         else:
             t = min(
                 ticks,
-                key=lambda x: abs(current_time + line["end"] - line["start"] - x - 2),
+                key=lambda x: abs(current_time + line["end"] - line["start"] - x) + 1000 * int(x + line["start"] - current_time > line["videoend"]),
             )
-            line["end"] = t + line["start"] - current_time
+            # if there are no ticks nearby, just go with the fixed point
+            if abs(current_time + line["end"] - line["start"] - t) <= 5:
+                line["end"] = t + line["start"] - current_time
             if "duration" in line:
                 line["duration"] = line["end"] - line["start"]
             current_time += line["end"] - line["start"]
@@ -133,7 +144,7 @@ def trim_video(line, r):
     if line["trim"] == "none":
         return
     duration = line["end"] - line["start"]
-    new_duration = min(duration * r + 2, duration)  # the 2 gives some wiggle room
+    new_duration = min(duration * r, duration)
     shave = duration - new_duration
     if line["trim"] == "start":
         line["start"] += shave
@@ -147,8 +158,11 @@ def trim_video(line, r):
 def make_text_from_line(line):
     if isinstance(line, list):
         return "; ".join([make_text_from_line(l) for l in line])
+    if "duration" in line:
+        line.pop("start")
+        line.pop("end")
     text = line["kind"] + "; " + line["arg"] + "; "
     for key, value in line.items():
-        if key not in ("kind", "arg", "trim", "ticks"):
+        if key not in ("kind", "arg", "trim", "ticks", "videoend"):
             text += key + " " + str(value) + "; "
     return text[:-2]
