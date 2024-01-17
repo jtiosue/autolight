@@ -19,7 +19,7 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
-dependencies = ["moviepy"]
+dependencies = ["moviepy==1.0.3"]
 version = "0.0.0"
 
 [project.urls]

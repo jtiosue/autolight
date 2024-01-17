@@ -1,0 +1,154 @@
+from . import generate_from_csv
+from ._helpers import readlines, create_mp_element
+
+
+def auto_generate_from_csv(filename: str) -> None:
+    audio, video = [], []
+    for line in readlines(filename):
+        if len(line) == 1:
+            line = line[0]
+            if line["kind"] == "audio":
+                if "ticks" in line:
+                    line["ticks"] = eval(line["ticks"])
+                audio.append(line)
+            else:
+                start = line.pop("start", 0)
+                if "end" not in line:
+                    l["end"] = start + l.get(
+                        "duration", create_mp_element(l).duration - start
+                    )
+                line["start"] = start
+                if "trim" not in line:
+                    line["trim"] = "symmetric"
+                video.append(line)
+        else:
+            video.append([])
+            for l in line:
+                start = l.pop("start", 0)
+                if "end" not in l:
+                    l["end"] = start + l.get(
+                        "duration", create_mp_element(l).duration - start
+                    )
+                l["start"] = start
+                if "trim" not in l:
+                    l["trim"] = "symmetric"
+                video[-1].append(l)
+
+    # get all possible transition points
+    ticks, prev = [], 0.0
+    for line in audio:
+        ticks.extend([prev + x for x in line["ticks"]])
+        line.pop("ticks")
+        prev += create_mp_element(line).duration
+    total_audio_duration = prev
+
+    # based on transition points and videos, make compilation
+    # each video has a "trim" key. If "trim" is "none", then we do not trim at all.
+    # If it is "symmetric", then we trim evenly from the start and end.
+    # If it is "start", then we only trim the start.
+    # If it is "end", then we only trim the end.
+
+    # add up all the video lengths, trim the ones that are allowed to be trimmed
+    # by the same percentage so that the total video length is roughly the audio length
+    total_video_length, total_trim_video_length = 0, 0
+    for line in video:
+        if isinstance(line, list):
+            total_video_length += max((l["end"] - l["start"] for l in line))
+            total_trim_video_length += max(
+                [0] + [l["end"] - l["start"] for l in line if l["trim"] != "none"]
+            )
+        else:
+            total_video_length += line["end"] - line["start"]
+            if line["trim"] != "none":
+                total_trim_video_length += line["end"] - line["start"]
+
+    total_nontrim_video_length = total_video_length - total_trim_video_length
+    # shrink trimmable videos by r
+    r = (total_video_length - total_nontrim_video_length) / total_trim_video_length
+    for line in video:
+        if isinstance(line, list):
+            for l in line:
+                trim_video(l, r)
+        else:
+            trim_video(line, r)
+
+    ####
+    # Now everything is roughly the right length. We just need to do set the transitions
+    # to the ticks. We just do it greedily.
+    current_time = 0
+    for line in video[:-1]:
+        if isinstance(line, list):
+            lmax = max(line, key=lambda x: x["end"] - x["start"])
+            t = min(
+                ticks,
+                key=lambda x: abs(current_time + lmax["end"] - lmax["start"] - x - 2),
+            )
+            lmax["end"] = t + lmax["start"] - current_time
+            current_time += lmax["end"] - lmax["start"]
+            for l in line:
+                l["end"] = min(l["start"] + lmax["end"] - lmax["start"], l["end"])
+                if "duration" in l:
+                    l["duration"] = l["end"] - l["start"]
+        else:
+            t = min(
+                ticks,
+                key=lambda x: abs(current_time + line["end"] - line["start"] - x - 2),
+            )
+            line["end"] = t + line["start"] - current_time
+            if "duration" in line:
+                line["duration"] = line["end"] - line["start"]
+            current_time += line["end"] - line["start"]
+
+    line = video[-1]
+    if isinstance(line, list):
+        for l in line:
+            l["end"] = (
+                l["start"] + total_audio_duration - current_time + 1
+            )  # end a little after audio
+            if "duration" in l:
+                l["duration"] = l["end"] - l["start"]
+    else:
+        line["end"] = (
+            line["start"] + total_audio_duration - current_time + 1
+        )  # end a little after audio
+        if "duration" in line:
+            line["duration"] = line["end"] - line["start"]
+
+    ######
+    # write new csv
+
+    with open("auto_" + filename, "w") as f:
+        # audio
+        for line in audio:
+            print(make_text_from_line(line), file=f)
+
+        # now do video
+        for line in video:
+            print(make_text_from_line(line), file=f)
+
+    return generate_from_csv("auto_" + filename)
+
+
+def trim_video(line, r):
+    if line["trim"] == "none":
+        return
+    duration = line["end"] - line["start"]
+    new_duration = min(duration * r + 2, duration)  # the 2 gives some wiggle room
+    shave = duration - new_duration
+    if line["trim"] == "start":
+        line["start"] += shave
+    elif line["trim"] == "end":
+        line["end"] -= shave
+    else:  # symmetric
+        line["start"] += shave / 2
+        line["end"] -= shave / 2
+
+
+def make_text_from_line(line):
+    if isinstance(line, list):
+        return "; ".join([make_text_from_line(l) for l in line])
+    text = line["kind"] + "; " + line["arg"] + "; "
+    for key, value in line.items():
+        if key not in ("kind", "arg", "trim", "ticks"):
+            text += key + " " + str(value) + "; "
+    return text[:-2]
