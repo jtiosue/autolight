@@ -18,7 +18,8 @@ def generate_from_csv(filename: str) -> None:
     # https://stackoverflow.com/questions/74170641/is-there-an-issue-with-moviepys-concatenate-videoclips-function-or-is-my-imp
     mp_video = mp.concatenate_videoclips(video, "compose")
     mp_audio = mp.concatenate_audioclips(audio)
-    mp_audio = mp.CompositeAudioClip([mp_audio, mp_video.audio])
+    if mp_video.audio:
+        mp_audio = mp.CompositeAudioClip([mp_audio, mp_video.audio])
     mp_video.audio = mp_audio
 
     # https://www.reddit.com/r/moviepy/comments/3uwuub/no_sound/

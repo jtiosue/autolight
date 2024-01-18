@@ -57,6 +57,8 @@ def create_mp_element(line):
 
     if "duration" in line:
         mp_elem = mp_elem.set_duration(line["duration"])
+    if "fps" in line:
+        mp_elem = mp_elem.set_fps(line["fps"])
     if "start" in line or "end" in line:
         start = line["start"] if "start" in line else 0
         end = line["end"] if "end" in line else mp_elem.duration - start
