@@ -1,4 +1,4 @@
-from autolight import auto_generate_from_csv, generate_from_csv, audioticks
+from autolight import auto_generate_from_file, generate_from_file, audioticks
 import sys
 
 if __name__ == "__main__":
@@ -10,9 +10,9 @@ if __name__ == "__main__":
     ):
         command, filename = arguments[0].strip(), arguments[1].strip()
         if command == "generate":
-            generate_from_csv(filename)
+            generate_from_file(filename)
         elif command == "autogenerate":
-            auto_generate_from_csv(filename)
+            auto_generate_from_file(filename)
         elif command == "audioticks":
             audioticks(filename)
     elif len(arguments) == 1 and arguments[0].strip() == "audioticks":

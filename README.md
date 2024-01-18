@@ -68,14 +68,14 @@ image; media/photo.png; duration 5; fadeout 5; position center; text; goodbye; d
 
 
 
-## Prereqs
+## Notes
 
 - Need `brew install imagemagick`
+- For crossfading, do `crossfadein 2` and `padding -2`. For multiple elements together (i.e. `video; details; text; details`), make sure the padding is on the first element.
 
 
 ## To do
 
 - Aspect ratio. [Maybe relevant](https://stackoverflow.com/questions/66775386/moviepy-distorting-concatenated-portrait-videos). In the meantime, when the aspect ratio gets messed up, just manually supply `height` or `width` for a clip.
 - Fade text, `bg_color` needs to be transparent: [https://github.com/Zulko/moviepy/issues/400](https://github.com/Zulko/moviepy/issues/400). Possibly use masks?
-- Include padding so that crossfades work (for video and audio). See [here](https://www.reddit.com/r/moviepy/comments/2f43e3/crossfades/).
 

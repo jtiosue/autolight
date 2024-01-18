@@ -1,8 +1,8 @@
-from . import generate_from_csv
+from . import generate_from_file
 from ._helpers import readlines, create_mp_element
 
 
-def auto_generate_from_csv(filename: str) -> None:
+def auto_generate_from_file(filename: str) -> None:
     audio, video = [], []
     for line in readlines(filename):
         if len(line) == 1:
@@ -70,14 +70,23 @@ def auto_generate_from_csv(filename: str) -> None:
     total_video_length, total_trim_video_length = 0, 0
     for line in video:
         if isinstance(line, list):
-            total_video_length += max((l["end"] - l["start"] for l in line))
+            total_video_length += max(
+                (l["end"] - l["start"] + line[0].get("padding", 0) for l in line)
+            )
             total_trim_video_length += max(
-                [0] + [l["end"] - l["start"] for l in line if l["trim"] != "none"]
+                [0]
+                + [
+                    l["end"] - l["start"] + line[0].get("padding", 0)
+                    for l in line
+                    if l["trim"] != "none"
+                ]
             )
         else:
-            total_video_length += line["end"] - line["start"]
+            total_video_length += line["end"] - line["start"] + line.get("padding", 0)
             if line["trim"] != "none":
-                total_trim_video_length += line["end"] - line["start"]
+                total_trim_video_length += (
+                    line["end"] - line["start"] + line.get("padding", 0)
+                )
 
     total_nontrim_video_length = total_video_length - total_trim_video_length
     # shrink trimmable videos by r
@@ -100,75 +109,134 @@ def auto_generate_from_csv(filename: str) -> None:
             lmax = max(line, key=lambda x: x["end"] - x["start"])
             t = min(
                 majorticks,
-                key=lambda x: abs(current_time + lmax["end"] - lmax["start"] - x)
-                + 1000 * penalty(x, current_time, lmax)
-                # + 1000 * (int(x + lmax["start"] - current_time > lmax["videoend"]) + int(x <= current_time)),
+                key=lambda x: abs(
+                    current_time
+                    + lmax["end"]
+                    - lmax["start"]
+                    + lmax.get("padding", 0)
+                    - x
+                )
+                + 1000 * penalty(x, current_time, lmax),
             )
             tminor = min(
                 minorticks + majorticks,
-                key=lambda x: abs(current_time + lmax["end"] - lmax["start"] - x)
-                + 1000 * penalty(x, current_time, lmax)
-                # + 1000 * (int(x + lmax["start"] - current_time > lmax["videoend"]) + int(x <= current_time)),
+                key=lambda x: abs(
+                    current_time
+                    + lmax["end"]
+                    - lmax["start"]
+                    + lmax.get("padding", 0)
+                    - x
+                )
+                + 1000 * penalty(x, current_time, lmax),
             )
 
-            if abs(current_time + lmax["end"] - lmax["start"] - t) <= 3 and t > current_time+.05:
+            if (
+                abs(
+                    current_time
+                    + lmax["end"]
+                    - lmax["start"]
+                    + lmax.get("padding", 0)
+                    - t
+                )
+                <= 3
+                and t > current_time + 0.05
+            ):
                 new_duration = t - current_time
-                trim_video(lmax, None, new_duration)
-                # lmax["end"] = t + lmax["start"] - current_time
-            elif abs(current_time + lmax["end"] - lmax["start"] - tminor) <= 5 and tminor > current_time+.05:
+                trim_video(lmax, None, new_duration - lmax.get("padding", 0))
+            elif (
+                abs(
+                    current_time
+                    + lmax["end"]
+                    - lmax["start"]
+                    + lmax.get("padding", 0)
+                    - tminor
+                )
+                <= 5
+                and tminor > current_time + 0.05
+            ):
                 new_duration = tminor - current_time
-                trim_video(lmax, None, new_duration)
-                # lmax["end"] = tminor + lmax["start"] - current_time
+                trim_video(lmax, None, new_duration - lmax.get("padding", 0))
             # else: if there are no ticks nearby, just go with the fixed point
-            current_time += lmax["end"] - lmax["start"]
+            current_time += lmax["end"] - lmax["start"] + lmax.get("padding", 0)
             for l in line:
-                # l["end"] = min(l["start"] + lmax["end"] - lmax["start"], l["end"])
                 if l["end"] - l["start"] > lmax["end"] - lmax["start"]:
                     trim_video(l, None, lmax["end"] - lmax["start"])
-                # if "duration" in l:
-                #     l["duration"] = l["end"] - l["start"]
         else:
             t = min(
                 majorticks,
-                key=lambda x: abs(current_time + line["end"] - line["start"] - x)
-                + 1000 * penalty(x, current_time, line)
-                # + 1000 * (int(x + line["start"] - current_time > line["videoend"]) + int(x <= current_time)),
+                key=lambda x: abs(
+                    current_time
+                    + line["end"]
+                    - line["start"]
+                    + line.get("padding", 0)
+                    - x
+                )
+                + 1000 * penalty(x, current_time, line),
             )
             tminor = min(
                 minorticks + majorticks,
-                key=lambda x: abs(current_time + line["end"] - line["start"] - x)
-                + 1000 * penalty(x, current_time, line)
-                # + 1000 * (int(x + line["start"] - current_time > line["videoend"]) + int(x <= current_time)),
+                key=lambda x: abs(
+                    current_time
+                    + line["end"]
+                    - line["start"]
+                    + line.get("padding", 0)
+                    - x
+                )
+                + 1000 * penalty(x, current_time, line),
             )
 
-            if abs(current_time + line["end"] - line["start"] - t) <= 3 and t > current_time:
+            if (
+                abs(
+                    current_time
+                    + line["end"]
+                    - line["start"]
+                    + line.get("padding", 0)
+                    - t
+                )
+                <= 3
+                and t > current_time
+            ):
                 new_duration = t - current_time
-                trim_video(line, None, new_duration)
-                # line["end"] = t + line["start"] - current_time
-            elif abs(current_time + line["end"] - line["start"] - tminor) <= 5 and tminor > current_time:
+                trim_video(line, None, new_duration - line.get("padding", 0))
+            elif (
+                abs(
+                    current_time
+                    + line["end"]
+                    - line["start"]
+                    + line.get("padding", 0)
+                    - tminor
+                )
+                <= 5
+                and tminor > current_time
+            ):
                 new_duration = tminor - current_time
-                trim_video(line, None, new_duration)
-                # line["end"] = tminor + line["start"] - current_time
+                trim_video(line, None, new_duration - line.get("padding", 0))
             # else: if there are no ticks nearby, just go with the fixed point
-            # if "duration" in line:
-            #     line["duration"] = line["end"] - line["start"]
-            current_time += line["end"] - line["start"]
+            current_time += line["end"] - line["start"] + line.get("padding", 0)
 
     # to do: make this respect trim specifications
     line = video[-1]
     if isinstance(line, list):
         for l in line:
             l["end"] = (
-                l["start"] + total_audio_duration - current_time + 1
+                l["start"]
+                - l.get("padding", 0)
+                + total_audio_duration
+                - current_time
+                + 1
             )  # end a little after audio
-            # if "duration" in l:
-            #     l["duration"] = l["end"] - l["start"]
+            if "duration" in l:
+                l["duration"] = l["end"] - l["start"]
     else:
         line["end"] = (
-            line["start"] + total_audio_duration - current_time + 1
+            line["start"]
+            - line.get("padding", 0)
+            + total_audio_duration
+            - current_time
+            + 1
         )  # end a little after audio
-        # if "duration" in line:
-        #     line["duration"] = line["end"] - line["start"]
+        if "duration" in line:
+            line["duration"] = line["end"] - line["start"]
 
     ######
     # write new csv
@@ -182,14 +250,16 @@ def auto_generate_from_csv(filename: str) -> None:
         for line in video:
             print(make_text_from_line(line), file=f)
 
-    return generate_from_csv("auto_" + filename)
+    return generate_from_file("auto_" + filename)
 
 
 def trim_video(line, r, new_duration=None):
     # if line["trim"] == "none":
     #     return
     duration = line["end"] - line["start"]
-    new_duration = new_duration if new_duration is not None else min(duration * r, duration)
+    new_duration = (
+        new_duration if new_duration is not None else min(duration * r, duration)
+    )
     shave = duration - new_duration
     if line["trim"] == "start":
         line["start"] += shave
@@ -205,7 +275,10 @@ def trim_video(line, r, new_duration=None):
             line["end"] = line["videoend"]
             line["start"] = line["end"] - new_duration
     else:  # symmetric
-        if line["start"] + shave / 2 >= line["videostart"] and line["end"] - shave / 2 <= line["videoend"]:
+        if (
+            line["start"] + shave / 2 >= line["videostart"]
+            and line["end"] - shave / 2 <= line["videoend"]
+        ):
             line["start"] += shave / 2
             line["end"] -= shave / 2
         elif line["start"] + shave / 2 < line["videostart"]:
@@ -219,15 +292,19 @@ def trim_video(line, r, new_duration=None):
     if "duration" in line:
         line["duration"] = new_duration
 
-    if line["end"] > line["videoend"] or line["start"] < line["videostart"] or line["end"] <= line["start"]:
+    if (
+        line["end"] > line["videoend"]
+        or line["start"] < line["videostart"]
+        or line["end"] <= line["start"]
+    ):
         raise ValueError("Video not long enough: " + str(line))
 
 
 def penalty(t, current_time, line):
-    # 
+    #
     if t <= current_time:
         return 1
-    duration = t - current_time
+    duration = t - current_time - line.get("padding", 0)
     if duration > line["videoend"] - line["videostart"]:
         return 1
     return 0
