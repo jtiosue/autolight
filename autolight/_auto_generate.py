@@ -28,6 +28,7 @@ def auto_generate_from_csv(filename: str) -> None:
                         "duration", create_mp_element(line).duration - start
                     )
                 # line["end"] will get modified later, but videoend does not
+                line["videostart"] = start
                 line["videoend"] = line["end"]
                 line["start"] = start
                 if "trim" not in line:
@@ -37,6 +38,7 @@ def auto_generate_from_csv(filename: str) -> None:
             video.append([])
             for l in line:
                 start = l.pop("start", 0)
+                l["videostart"] = start
                 if "end" not in l:
                     l["end"] = start + l.get(
                         "duration", create_mp_element(l).duration - start
@@ -83,9 +85,11 @@ def auto_generate_from_csv(filename: str) -> None:
     for line in video:
         if isinstance(line, list):
             for l in line:
-                trim_video(l, r)
+                if l["trim"] != "none":
+                    trim_video(l, r)
         else:
-            trim_video(line, r)
+            if line["trim"] != "none":
+                trim_video(line, r)
 
     ####
     # Now everything is roughly the right length. We just need to do set the transitions
@@ -97,59 +101,74 @@ def auto_generate_from_csv(filename: str) -> None:
             t = min(
                 majorticks,
                 key=lambda x: abs(current_time + lmax["end"] - lmax["start"] - x)
-                + 1000 * (int(x + lmax["start"] - current_time > lmax["videoend"]) + int(x <= current_time)),
+                + 1000 * penalty(x, current_time, lmax)
+                # + 1000 * (int(x + lmax["start"] - current_time > lmax["videoend"]) + int(x <= current_time)),
             )
             tminor = min(
                 minorticks + majorticks,
                 key=lambda x: abs(current_time + lmax["end"] - lmax["start"] - x)
-                + 1000 * (int(x + lmax["start"] - current_time > lmax["videoend"]) + int(x <= current_time)),
+                + 1000 * penalty(x, current_time, lmax)
+                # + 1000 * (int(x + lmax["start"] - current_time > lmax["videoend"]) + int(x <= current_time)),
             )
 
             if abs(current_time + lmax["end"] - lmax["start"] - t) <= 3 and t > current_time+.05:
-                lmax["end"] = t + lmax["start"] - current_time
-            elif abs(current_time + lmax["end"] - lmax["start"] - tminor) <= 5 and t > current_time+.05:
-                lmax["end"] = tminor + lmax["start"] - current_time
+                new_duration = t - current_time
+                trim_video(lmax, None, new_duration)
+                # lmax["end"] = t + lmax["start"] - current_time
+            elif abs(current_time + lmax["end"] - lmax["start"] - tminor) <= 5 and tminor > current_time+.05:
+                new_duration = tminor - current_time
+                trim_video(lmax, None, new_duration)
+                # lmax["end"] = tminor + lmax["start"] - current_time
             # else: if there are no ticks nearby, just go with the fixed point
             current_time += lmax["end"] - lmax["start"]
             for l in line:
-                l["end"] = min(l["start"] + lmax["end"] - lmax["start"], l["end"])
-                if "duration" in l:
-                    l["duration"] = l["end"] - l["start"]
+                # l["end"] = min(l["start"] + lmax["end"] - lmax["start"], l["end"])
+                if l["end"] - l["start"] > lmax["end"] - lmax["start"]:
+                    trim_video(l, None, lmax["end"] - lmax["start"])
+                # if "duration" in l:
+                #     l["duration"] = l["end"] - l["start"]
         else:
             t = min(
                 majorticks,
                 key=lambda x: abs(current_time + line["end"] - line["start"] - x)
-                + 1000 * (int(x + line["start"] - current_time > line["videoend"]) + int(x <= current_time)),
+                + 1000 * penalty(x, current_time, line)
+                # + 1000 * (int(x + line["start"] - current_time > line["videoend"]) + int(x <= current_time)),
             )
             tminor = min(
                 minorticks + majorticks,
                 key=lambda x: abs(current_time + line["end"] - line["start"] - x)
-                + 1000 * (int(x + line["start"] - current_time > line["videoend"]) + int(x <= current_time)),
+                + 1000 * penalty(x, current_time, line)
+                # + 1000 * (int(x + line["start"] - current_time > line["videoend"]) + int(x <= current_time)),
             )
 
             if abs(current_time + line["end"] - line["start"] - t) <= 3 and t > current_time:
-                line["end"] = t + line["start"] - current_time
-            elif abs(current_time + line["end"] - line["start"] - tminor) <= 5 and t > current_time:
-                line["end"] = tminor + line["start"] - current_time
+                new_duration = t - current_time
+                trim_video(line, None, new_duration)
+                # line["end"] = t + line["start"] - current_time
+            elif abs(current_time + line["end"] - line["start"] - tminor) <= 5 and tminor > current_time:
+                new_duration = tminor - current_time
+                trim_video(line, None, new_duration)
+                # line["end"] = tminor + line["start"] - current_time
             # else: if there are no ticks nearby, just go with the fixed point
-            if "duration" in line:
-                line["duration"] = line["end"] - line["start"]
+            # if "duration" in line:
+            #     line["duration"] = line["end"] - line["start"]
             current_time += line["end"] - line["start"]
 
+    # to do: make this respect trim specifications
     line = video[-1]
     if isinstance(line, list):
         for l in line:
             l["end"] = (
                 l["start"] + total_audio_duration - current_time + 1
             )  # end a little after audio
-            if "duration" in l:
-                l["duration"] = l["end"] - l["start"]
+            # if "duration" in l:
+            #     l["duration"] = l["end"] - l["start"]
     else:
         line["end"] = (
             line["start"] + total_audio_duration - current_time + 1
         )  # end a little after audio
-        if "duration" in line:
-            line["duration"] = line["end"] - line["start"]
+        # if "duration" in line:
+        #     line["duration"] = line["end"] - line["start"]
 
     ######
     # write new csv
@@ -166,19 +185,52 @@ def auto_generate_from_csv(filename: str) -> None:
     return generate_from_csv("auto_" + filename)
 
 
-def trim_video(line, r):
-    if line["trim"] == "none":
-        return
+def trim_video(line, r, new_duration=None):
+    # if line["trim"] == "none":
+    #     return
     duration = line["end"] - line["start"]
-    new_duration = min(duration * r, duration)
+    new_duration = new_duration if new_duration is not None else min(duration * r, duration)
     shave = duration - new_duration
     if line["trim"] == "start":
         line["start"] += shave
+        if line["start"] + shave >= line["videostart"]:
+            line["start"] += shave
+        else:
+            line["start"] = line["videostart"]
+            line["end"] = line["start"] + new_duration
     elif line["trim"] == "end":
-        line["end"] -= shave
+        if line["end"] - shave <= line["videoend"]:
+            line["end"] -= shave
+        else:
+            line["end"] = line["videoend"]
+            line["start"] = line["end"] - new_duration
     else:  # symmetric
-        line["start"] += shave / 2
-        line["end"] -= shave / 2
+        if line["start"] + shave / 2 >= line["videostart"] and line["end"] - shave / 2 <= line["videoend"]:
+            line["start"] += shave / 2
+            line["end"] -= shave / 2
+        elif line["start"] + shave / 2 < line["videostart"]:
+            line["start"] = line["videostart"]
+            line["end"] = line["start"] + new_duration
+
+        else:
+            line["end"] = line["videoend"]
+            line["start"] = line["end"] - new_duration
+
+    if "duration" in line:
+        line["duration"] = new_duration
+
+    if line["end"] > line["videoend"] or line["start"] < line["videostart"] or line["end"] <= line["start"]:
+        raise ValueError("Video not long enough: " + str(line))
+
+
+def penalty(t, current_time, line):
+    # 
+    if t <= current_time:
+        return 1
+    duration = t - current_time
+    if duration > line["videoend"] - line["videostart"]:
+        return 1
+    return 0
 
 
 def make_text_from_line(line):
@@ -189,6 +241,6 @@ def make_text_from_line(line):
         line.pop("end")
     text = line["kind"] + "; " + line["arg"] + "; "
     for key, value in line.items():
-        if key not in ("kind", "arg", "trim", "ticks", "videoend"):
+        if key not in ("kind", "arg", "trim", "ticks", "videoend", "videostart"):
             text += key + " " + str(value) + "; "
     return text[:-2]

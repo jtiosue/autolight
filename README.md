@@ -34,8 +34,9 @@ image, media/photo.png, duration 5, fadein 1, position center, text, goodbye, du
 
 #### With auto
 
-- The `majorticks` and `minorticks` entry for the audio gives the timestamps of good transition points. You can tap the timestamps out with `python -m autolight autoticks`. The first entry of either tick list denotes an offset, and the rest of the entries denotes timestamps. If you've done well to accurately record the timestamps, then the offset should be set to `0`. On the other hand, if your timestamps are shifted by `x` seconds, then the offset should be set to `x`. For example, if each timestamp is 0.2 seconds early, then `x=0.2`. If each timestamp is 0.2 seconds late, then `x=-0.2`. `majorticks` denote good transition points. `minorticks` denote less good, but still okay transition points. You can supply both, one, or neither.
+- The `majorticks` and `minorticks` entry for the audio gives the timestamps of good transition points. You can tap the timestamps out with `python -m autolight autoticks [file.mp3]`. The first entry of either tick list denotes an offset, and the rest of the entries denotes timestamps. If you've done well to accurately record the timestamps, then the offset should be set to `0`. On the other hand, if your timestamps are shifted by `x` seconds, then the offset should be set to `x`. For example, if each timestamp is 0.2 seconds early, then `x=0.2`. If each timestamp is 0.2 seconds late, then `x=-0.2`. `majorticks` denote good transition points. `minorticks` denote less good, but still okay transition points. You can supply both, one, or neither.
 - The `trim` option can be `none`, `start`, `end`, or `symmetric` (default if no trim provided). If it is `none`, then the video will be minimally trimmed. Otherwise it will be trimmed from the start, end, or symmetrically on both the start and end.
+- Giving some padding on the beginning and/or end of video clips helps to make the transitions better. The sum length of the videos should be greater than that of the audio, and `autogenerate` will trim everything down. If you for sure want to include, e.g., the beginning of the clip, then include some padding on the end of the clip and select `trim end`.
 
 **file.txt**
 
@@ -76,5 +77,5 @@ image; media/photo.png; duration 5; fadeout 5; position center; text; goodbye; d
 
 - Aspect ratio. [Maybe relevant](https://stackoverflow.com/questions/66775386/moviepy-distorting-concatenated-portrait-videos). In the meantime, when the aspect ratio gets messed up, just manually supply `height` or `width` for a clip.
 - Fade text, `bg_color` needs to be transparent: [https://github.com/Zulko/moviepy/issues/400](https://github.com/Zulko/moviepy/issues/400). Possibly use masks?
-- Include padding so that crossfades work. See [here](https://www.reddit.com/r/moviepy/comments/2f43e3/crossfades/).
+- Include padding so that crossfades work (for video and audio). See [here](https://www.reddit.com/r/moviepy/comments/2f43e3/crossfades/).
 
