@@ -15,6 +15,8 @@ if __name__ == "__main__":
             auto_generate_from_csv(filename)
         elif command == "audioticks":
             audioticks(filename)
+    elif len(arguments) == 1 and arguments[0].strip() == "audioticks":
+        audioticks()
     else:
         print(
             "USAGE: python -m autolight [command] [file] \n"

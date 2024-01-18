@@ -71,5 +71,21 @@ def create_mp_element(line):
         mp_elem = mp_elem.set_position(line["position"])
     if "volume" in line:
         mp_elem = mp_elem.fx(afx.volumex, line["volume"])
+    if "crossfadein" in line:
+        mp_elem = mp_elem.crossfadein(line["crossfadein"])
+    if "crossfadeout" in line:
+        mp_elem = mp_elem.crossfadeout(line["crossfadeout"])
+    if "height" in line or "width" in line:
+        # there is an annoying bug in moviepy
+        # https://stackoverflow.com/questions/76616042/attributeerror-module-pil-image-has-no-attribute-antialias
+        import PIL
+        PIL.Image.ANTIALIAS = PIL.Image.Resampling.LANCZOS
+        if "width" in line and "height" in line:
+            mp_elem = mp_elem.resize(newsize=(line["width"], line["height"]))
+        elif "width" in line:
+            mp_elem = mp_elem.resize(width=line["width"])
+        else:
+            mp_elem = mp_elem.resize(height=line["height"])
+
 
     return mp_elem

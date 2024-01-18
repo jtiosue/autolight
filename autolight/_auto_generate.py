@@ -51,9 +51,9 @@ def auto_generate_from_csv(filename: str) -> None:
     majorticks, minorticks, prev = [-100], [-100], 0.0
     for line in audio:
         majorticks.extend([prev + x for x in line.get("majorticks", [])])
-        line.pop("majorticks")
+        line.pop("majorticks", None)
         minorticks.extend([prev + x for x in line.get("minorticks", [])])
-        line.pop("minorticks")
+        line.pop("minorticks", None)
         prev += create_mp_element(line).duration
     total_audio_duration = prev
 
