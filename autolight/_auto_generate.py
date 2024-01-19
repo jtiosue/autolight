@@ -52,12 +52,14 @@ def auto_generate_from_file(filename: str) -> None:
     # get all possible transition points
     majorticks, minorticks, prev = [-100], [-100], 0.0
     for line in audio:
+        prev += line.get("padding", 0)
         majorticks.extend([prev + x for x in line.get("majorticks", [])])
         line.pop("majorticks", None)
         minorticks.extend([prev + x for x in line.get("minorticks", [])])
         line.pop("minorticks", None)
         prev += create_mp_element(line).duration
     total_audio_duration = prev
+    print(majorticks)
 
     # based on transition points and videos, make compilation
     # each video has a "trim" key. If "trim" is "none", then we do not trim at all.
