@@ -59,7 +59,6 @@ def auto_generate_from_file(filename: str) -> None:
         line.pop("minorticks", None)
         prev += create_mp_element(line).duration
     total_audio_duration = prev
-    print(majorticks)
 
     # based on transition points and videos, make compilation
     # each video has a "trim" key. If "trim" is "none", then we do not trim at all.
@@ -139,7 +138,7 @@ def auto_generate_from_file(filename: str) -> None:
                     - lmax["start"]
                     + lmax.get("padding", 0)
                     - t
-                )
+                ) + 1000 * penalty(t, current_time, lmax)
                 <= 3
                 and t > current_time + 0.05
             ):
@@ -152,7 +151,7 @@ def auto_generate_from_file(filename: str) -> None:
                     - lmax["start"]
                     + lmax.get("padding", 0)
                     - tminor
-                )
+                ) + 1000 * penalty(tminor, current_time, lmax)
                 <= 5
                 and tminor > current_time + 0.05
             ):
@@ -194,7 +193,7 @@ def auto_generate_from_file(filename: str) -> None:
                     - line["start"]
                     + line.get("padding", 0)
                     - t
-                )
+                ) + 1000 * penalty(t, current_time, line)
                 <= 3
                 and t > current_time
             ):
@@ -207,7 +206,7 @@ def auto_generate_from_file(filename: str) -> None:
                     - line["start"]
                     + line.get("padding", 0)
                     - tminor
-                )
+                ) + 1000 * penalty(tminor, current_time, line)
                 <= 5
                 and tminor > current_time
             ):
@@ -225,8 +224,7 @@ def auto_generate_from_file(filename: str) -> None:
                 - l.get("padding", 0)
                 + total_audio_duration
                 - current_time
-                + 1
-            )  # end a little after audio
+            )
             if "duration" in l:
                 l["duration"] = l["end"] - l["start"]
     else:
@@ -235,8 +233,7 @@ def auto_generate_from_file(filename: str) -> None:
             - line.get("padding", 0)
             + total_audio_duration
             - current_time
-            + 1
-        )  # end a little after audio
+        )
         if "duration" in line:
             line["duration"] = line["end"] - line["start"]
 
@@ -264,7 +261,6 @@ def trim_video(line, r, new_duration=None):
     )
     shave = duration - new_duration
     if line["trim"] == "start":
-        line["start"] += shave
         if line["start"] + shave >= line["videostart"]:
             line["start"] += shave
         else:
@@ -304,7 +300,7 @@ def trim_video(line, r, new_duration=None):
 
 def penalty(t, current_time, line):
     #
-    if t <= current_time:
+    if t <= current_time + .05:
         return 1
     duration = t - current_time - line.get("padding", 0)
     if duration > line["videoend"] - line["videostart"]:

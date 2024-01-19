@@ -55,13 +55,16 @@ def create_mp_element(line):
     else:
         mp_elem = kind_to_class[line["kind"]](line["arg"])
 
+    if line["kind"] != "audio":
+        mp_elem = mp_elem.set_position(("center", "center"))
+
     if "duration" in line:
         mp_elem = mp_elem.set_duration(line["duration"])
     if "fps" in line:
         mp_elem = mp_elem.set_fps(line["fps"])
     if "start" in line or "end" in line:
-        start = line["start"] if "start" in line else 0
-        end = line["end"] if "end" in line else mp_elem.duration - start
+        start = line.get("start", 0)
+        end = line.get("end", mp_elem.duration - start)
         mp_elem = mp_elem.subclip(start, end)
     if "fadein" in line:
         fadein = afx.audio_fadein if line["kind"] == "audio" else vfx.fadein
@@ -88,6 +91,26 @@ def create_mp_element(line):
             mp_elem = mp_elem.resize(width=line["width"])
         else:
             mp_elem = mp_elem.resize(height=line["height"])
+    if "rotate" in line:
+        # https://github.com/Zulko/moviepy/issues/1042
+        # mp_elem = mp_elem.add_mask().rotate(line["rotate"], expand=False)
+        mp_elem = mp_elem.rotate(line["rotate"], expand=False)
+    if "zoom" in line:
+        if line["zoom"] == "in":
+            mp_elem = mp_elem.resize(lambda t: 1 + .2*t)
+        if line["zoom"] == "out":
+            duration = line
+            mp_elem = mp_elem.resize(lambda t: 1 + .2*(mp_elem.duration - t))
+    if "pan" in line:
+        if line["pan"] == "right":
+            # https://stackoverflow.com/questions/73521169/move-across-image-using-moviepy
+            mp_elem = mp.CompositeVideoClip([mp_elem.set_position(lambda t: (t * 10 + 50, "center"))])
+        elif line["pan"] == "left":
+            mp_elem = mp.CompositeVideoClip([mp_elem.set_position(lambda t: (-t * 10 - 50 + mp_elem.w, "center"))])
+        elif line["pan"] == "up":
+            mp_elem = mp.CompositeVideoClip([mp_elem.set_position(lambda t: ("center", t * 10 + 50))])
+        elif line["pan"] == "down":
+            mp_elem = mp.CompositeVideoClip([mp_elem.set_position(lambda t: ("center", -t * 10 - 50 + mp_elem.h))])
 
 
     return mp_elem

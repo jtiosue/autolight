@@ -30,12 +30,13 @@ def generate_from_file(filename: str) -> None:
 
     # compose is important for when the video/images have different sizes
     # https://stackoverflow.com/questions/74170641/is-there-an-issue-with-moviepys-concatenate-videoclips-function-or-is-my-imp
-    mp_audio = mp.concatenate_audioclips(audio)
     if video:
         mp_video = mp.concatenate_videoclips(video, method="compose", bg_color=None)
-        if mp_video.audio:
-            mp_audio = mp.CompositeAudioClip([mp_audio, mp_video.audio])
-        mp_video.audio = mp_audio
+        if audio:
+            mp_audio = mp.concatenate_audioclips(audio)
+            if mp_video.audio:
+                mp_audio = mp.CompositeAudioClip([mp_audio, mp_video.audio])
+            mp_video.audio = mp_audio
 
         # https://www.reddit.com/r/moviepy/comments/3uwuub/no_sound/
         mp_video.write_videofile(
@@ -47,7 +48,8 @@ def generate_from_file(filename: str) -> None:
             codec="libx264",
             audio_codec="aac",
         )
-    else:
+    elif audio:
+        mp_audio = mp.concatenate_audioclips(audio)
         mp_audio.write_audiofile(filename[:-3] + "mp3")
 
 
