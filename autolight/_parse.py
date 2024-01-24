@@ -1,6 +1,7 @@
 import os
 from . import Clip, CompositeClip, VideoClips, AudioClips
 from typing import Tuple
+import re
 
 __all__ = "File", "parse_file", "write_file", "parse_and_write_file"
 
@@ -17,12 +18,15 @@ def parse_file(
     audio, video = AudioClips([]), VideoClips([])
     options = options or {}
     with open(os.path.join(base_directory, filename)) as f:
-        all_lines = eval(f.read().strip())
-        # to do: use re.sub here so that filename is converted to base_directory/filename.
+        # use add_directory_to_filename to change the base directory for this file
+        all_lines = eval(add_directory_to_filenames(f.read().strip(), base_directory))
     for line in all_lines:
+        # this doesn't work because if `end` is not provided in a video clip,
+        # upon creation of a Clip object my code tries to find the clip and
+        # determine the duration. That's why we instead use add_directory_to_filenaes
+        # above to directly edit the string before evaluating.
         # if not isinstance(line, File) and "filename" in line:
         # line.filename = os.path.join(base_directory, line.filename)
-
         if isinstance(line, File):
             foptions = options | line.kwargs
             faudio, fvideo = parse_file(
@@ -70,3 +74,50 @@ def write_file(
 def parse_and_write_file(filename: str):
     audio, video = parse_file(filename)
     write_file("parsed_" + filename, audio, video)
+
+
+def add_directory_to_filenames(string: str, directory: str) -> str:
+    """
+    In the string, replace all occurrances of a filename by directory/filename.
+    """
+
+    def repl_equals(x):
+        filename = re.search(r"['\"](.*?)['\"]", x.group()).group()[1:-1]
+        return "filename='%s'" % os.path.join(directory, filename)
+
+    def repl_dict(x):
+        filename = re.search(r":\s*?['\"](.*?\..*?)['\"]", x.group()).group()
+        filename = filename[1:].strip()[1:-1]
+        return "'filename': '%s'" % os.path.join(directory, filename)
+
+    string = re.sub(r"filename\s*?=\s*?['\"](.*?)['\"]", repl_equals, string)
+    string = re.sub(r"['\"]filename['\"]\s*?:\s*?['\"](.*?)['\"]", repl_dict, string)
+
+    # for the walrus
+
+    def repl_equals_walrus(x):
+        assignment = re.search(r"\(.*?\)", x.group()).group()[1:-1].strip()
+        assignment = [x.strip() for x in assignment.split(":=")]
+        var, filename = assignment
+        filename = filename[1:-1]
+        return "filename=(%s := '%s')" % (var, os.path.join(directory, filename))
+
+    def repl_dict_walrus(x):
+        assignment = re.search(r"\(.*?\)", x.group()).group()[1:-1].strip()
+        assignment = [x.strip() for x in assignment.split(":=")]
+        var, filename = assignment
+        filename = filename[1:-1]
+        return "'filename': (%s := '%s')" % (var, os.path.join(directory, filename))
+
+    string = re.sub(
+        r"filename\s*?=\s*?\(\s*?.*?\s*?:=\s*?['\"](.*?)['\"]\s*?\)",
+        repl_equals_walrus,
+        string,
+    )
+    string = re.sub(
+        r"['\"]filename['\"]\s*?:\s*?\(\s*?.*?\s*?:=\s*?['\"](.*?)['\"]\s*?\)",
+        repl_dict_walrus,
+        string,
+    )
+
+    return string

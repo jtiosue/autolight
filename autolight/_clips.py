@@ -8,7 +8,7 @@ class Clip:
         start=0,
         speed=1,
         padding=0,
-        fontsize=40,
+        fontsize=30,
         font="Courier",
         color="red",
         bg_color=b"transparent",
@@ -342,6 +342,11 @@ def get_file_duration(filename: str) -> float:
     ## mdls is fast and doesn't require external software but only works on mac
     # https://stackoverflow.com/questions/13332268/how-to-use-subprocess-command-with-pipes
     cmd = "mdls %s | grep Duration | awk '{ print $3 }'" % filename
-    ps = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    ps = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
     output = ps.communicate()[0].strip()
-    return float(output)
+    try:
+        return float(output)
+    except ValueError:
+        raise ValueError(f"Could not find {filename}")
