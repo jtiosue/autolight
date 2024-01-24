@@ -98,14 +98,20 @@ def add_directory_to_filenames(string: str, directory: str) -> str:
     def repl_equals_walrus(x):
         assignment = re.search(r"\(.*?\)", x.group()).group()[1:-1].strip()
         assignment = [x.strip() for x in assignment.split(":=")]
-        var, filename = assignment
+        try:
+            var, filename = assignment
+        except ValueError:
+            raise ValueError("As of now, you can't have nested walruses: " + x.group())
         filename = filename[1:-1]
         return "filename=(%s := '%s')" % (var, os.path.join(directory, filename))
 
     def repl_dict_walrus(x):
         assignment = re.search(r"\(.*?\)", x.group()).group()[1:-1].strip()
         assignment = [x.strip() for x in assignment.split(":=")]
-        var, filename = assignment
+        try:
+            var, filename = assignment
+        except ValueError:
+            raise ValueError("As of now, you can't have nested walruses: " + x.group())
         filename = filename[1:-1]
         return "'filename': (%s := '%s')" % (var, os.path.join(directory, filename))
 

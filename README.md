@@ -5,7 +5,8 @@ Automatically make compilation highlight videos
 - `python -m autolight audioticks filename.mp3` to generate a list of major and minor transition points.
 - `python -m autolight parse filename.py` to take a list of audio and video clips and parse it into a nicer format with duration details.
 - `python -m autolight generate filename.py` to take a list of audio and video clips and generate an mp4 from it.
-- `python -m autolight autogenerate filename.py` to take a list of audio and video clips and generate a new `auto_filename.py` from it that is nicely compiled to the audio. You can then create the new video with `python -m autolight generate auto_filename.py`.
+- `python -m autolight autoschedule filename.py` to take a list of audio and video clips and generate a new `auto_filename.py` from it that is nicely compiled to the audio. You can then create the new video with `python -m autolight generate auto_filename.py`.
+- `python -m autolight autogenerate filename.py` simply runs `python -m autolight autoschedule filename.py && python -m autolight generate auto_filename.py`.
 
 See `examples/` for how to format `filename.py`.
 

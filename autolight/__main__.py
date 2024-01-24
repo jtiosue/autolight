@@ -3,6 +3,7 @@ from autolight import (
     generate_from_file,
     audioticks,
     parse_and_write_file,
+    auto_schedule_from_file,
 )
 import sys
 
@@ -11,7 +12,7 @@ if __name__ == "__main__":
     if len(arguments) == 2 and arguments[0].strip() in (
         "generate",
         "autogenerate",
-        "audioticks",
+        "autoschedule" "audioticks",
         "parse",
     ):
         command, filename = arguments[0].strip(), arguments[1].strip()
@@ -23,10 +24,12 @@ if __name__ == "__main__":
             audioticks(filename)
         elif command == "parse":
             parse_and_write_file(filename)
+        elif command == "autoschedule":
+            auto_schedule_from_file(filename)
     elif len(arguments) == 1 and arguments[0].strip() == "audioticks":
         audioticks()
     else:
         print(
             "USAGE: python -m autolight [command] [file] \n"
-            "command=generate or autogenerate or audioticks or parse"
+            "command=generate or autogenerate or autoschedule or audioticks or parse"
         )
