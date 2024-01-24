@@ -63,4 +63,4 @@ def penalty(t, current_time, clip):
     # returns 1 if making the clip last until time t is not possible.
     # otherwise returns 0
     duration = t - current_time - clip.padding
-    return int(not 0.1 <= duration <= clip._videoduration)
+    return int(not (0.1 <= duration <= clip._videoduration and t - current_time >= 0.1))
