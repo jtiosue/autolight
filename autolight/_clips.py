@@ -167,7 +167,8 @@ class CompositeClip(Clip):
         elif self._initialized:
             for i in range(1, len(self.clips)):
                 c = self.clips[i]
-                setattr(c, name, value)
+                if not (c.is_text() and name in ("width", "height")):
+                    setattr(c, name, value)
 
     def copy(self):
         return CompositeClip([c.copy() for c in self.clips])
