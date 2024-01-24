@@ -1,5 +1,13 @@
 # the example directory has a bunch of video files I don't want to send to github or track changes
-examples/*
+
+examples/**/*.mp3
+examples/**/*.MP3
+examples/**/*.m4a
+examples/**/*.M4A
+examples/**/*.mp4
+examples/**/*.MP4
+examples/**/*.mov
+examples/**/*.MOV
 
 # mac
 .DS_Store

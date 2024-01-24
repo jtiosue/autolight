@@ -12,7 +12,7 @@ authors = [
 ]
 description = "A package for automatically making compilation highlight videos"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 license = {text = "Apache Software License 2.0"}
 classifiers = [
     "Programming Language :: Python :: 3",

@@ -1,40 +1,73 @@
+import os
 import moviepy.editor as mp
 
 afx, vfx = mp.afx, mp.vfx
 
 
-def readlines(filename: str):
-    with open(filename) as f:
+def readlines(filename: str, base_directory="", options=None):
+    if options is None:
+        options = {}
+    with open(os.path.join(base_directory, filename)) as f:
         for line in f:
-            if not line.strip() or line.strip()[0] == "#":
+            compiled_line = compile_line(line, base_directory, options)
+            if not compiled_line:
                 continue
-            compiled_line = []
-            l = [x.strip() for x in line.split(";")]
-            i = 0
-            while i < len(l):
-                elem = l[i]
-                if elem in ("audio", "video", "image", "text"):
-                    compiled_line.append(dict(kind=elem))
-                    i += 1
-                    compiled_line[-1]["arg"] = l[i]
+            files = [x for x in compiled_line if x["kind"] == "file"]
+            nonfiles = [x for x in compiled_line if x["kind"] != "file"]
+            
+            if nonfiles:
+                yield nonfiles
 
-                elif elem.strip():
-                    j = elem.index(" ")
-                    compiled_line[-1][elem[:j].strip()] = try_number(elem[j:].strip())
+            for f in files:
+                foptions = options | {k: v for k, v in f.items() if k not in ("kind", "arg")}
+                yield from readlines(
+                    os.path.basename(f["arg"]),
+                    os.path.dirname(os.path.join(base_directory, f["arg"])),
+                    foptions
+                )
 
-                i += 1
 
-            yield compiled_line
+def compile_line(line, base_directory, options):
+    textoptions = {k: v for k, v in options.items() if k not in ("width", "height")}
+    if not line.strip() or line.strip()[0] == "#":
+        return []
+    l = [x.strip() for x in filter(lambda y: y.strip(), line.split(";"))]
+    compiled_line = []
+    i = 0
+    while i < len(l):
+        elem = l[i]
+        if elem in ("audio", "video", "image", "file"):
+            compiled_line.append(options.copy())
+            compiled_line[-1]["kind"] = elem
+            i += 1
+            compiled_line[-1]["arg"] = os.path.join(base_directory, l[i])
+        elif elem == "text":
+            compiled_line.append(textoptions.copy())
+            compiled_line[-1]["kind"] = elem
+            i += 1
+            compiled_line[-1]["arg"] = l[i]
+        elif elem.strip():
+            j = elem.index(" ")
+            compiled_line[-1][elem[:j].strip()] = try_number(elem[j:].strip())
+
+        i += 1
+
+    return compiled_line
 
 
 def try_number(string: str):
+    # try:
+    #     output = int(string)
+    # except (ValueError, TypeError):
+    #     try:
+    #         output = float(string)
+    #     except (ValueError, TypeError):
+    #         output = string
+    # return output
     try:
-        output = int(string)
-    except (ValueError, TypeError):
-        try:
-            output = float(string)
-        except (ValueError, TypeError):
-            output = string
+        output = eval(string)
+    except:
+        output = string
     return output
 
 
@@ -49,7 +82,7 @@ def create_mp_element(line):
     if line["kind"] == "text":
         kwargs = {}
         for key, value in line.items():
-            if key in ("color", "fontsize", "font"):  # add more
+            if key in ("color", "fontsize", "font", "bg_color"):  # add more
                 kwargs[key] = value
         mp_elem = kind_to_class[line["kind"]](line["arg"], **kwargs)
     else:
@@ -64,7 +97,7 @@ def create_mp_element(line):
         mp_elem = mp_elem.set_fps(line["fps"])
     if "start" in line or "end" in line:
         start = line.get("start", 0)
-        end = line.get("end", mp_elem.duration - start)
+        end = line.get("end", mp_elem.duration)
         mp_elem = mp_elem.subclip(start, end)
     if "fadein" in line:
         fadein = afx.audio_fadein if line["kind"] == "audio" else vfx.fadein
@@ -101,7 +134,7 @@ def create_mp_element(line):
         if line["zoom"] == "out":
             duration = line
             mp_elem = mp_elem.resize(lambda t: 1 + .2*(mp_elem.duration - t))
-    if "pan" in line:
+    if "pan" in line: # need to also do crop
         if line["pan"] == "right":
             # https://stackoverflow.com/questions/73521169/move-across-image-using-moviepy
             mp_elem = mp.CompositeVideoClip([mp_elem.set_position(lambda t: (t * 10 + 50, "center"))])
@@ -111,6 +144,8 @@ def create_mp_element(line):
             mp_elem = mp.CompositeVideoClip([mp_elem.set_position(lambda t: ("center", t * 10 + 50))])
         elif line["pan"] == "down":
             mp_elem = mp.CompositeVideoClip([mp_elem.set_position(lambda t: ("center", -t * 10 - 50 + mp_elem.h))])
+    if "speed" in line:
+        mp_elem = mp_elem.speedx(line["speed"])
 
 
     return mp_elem

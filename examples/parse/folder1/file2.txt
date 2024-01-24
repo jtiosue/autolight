@@ -1,0 +1,5 @@
+[
+    Clip(filename='filename in folder1', start=2, end=5),
+    File("folder2/file3.txt", volume=0),
+    Clip(filename="filename again in folder1", trim='none', end=2)
+]

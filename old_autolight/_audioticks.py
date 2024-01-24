@@ -2,8 +2,6 @@ import tkinter as tk
 import time
 from playsound import playsound
 
-__all__ = ("audioticks",)
-
 
 def audioticks(filename=None):
     root = tk.Tk()
