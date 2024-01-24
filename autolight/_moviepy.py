@@ -110,8 +110,9 @@ def generate_clip_moviepy(clip: Clip):
     if clip.is_text():
         kwargs = {}
         for key in ("color", "fontsize", "font", "bg_color"):  # add more
-            if key in clip:
-                kwargs[key] = getattr(clip, key)
+            # if key in clip:
+            #     kwargs[key] = getattr(clip, key)
+            kwargs[key] = getattr(clip, key) # will get the default if nothing was supplied
         mp_elem = kind_to_class[clip.kind](clip.text, **kwargs)
     else:
         mp_elem = kind_to_class[clip.kind](clip.filename)

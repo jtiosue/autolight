@@ -57,13 +57,13 @@ def write_file(
         print("[", file=f)
         for c, end in audio.iter_with_endpoints():
             print(str(c), ", ", file=f)
-            print(f"# {end} {audio.tick_type(end)}", file=f)
+            print(f"# {round(end, 2)} {audio.tick_type(end)}", file=f)
 
         print("\n", file=f)
 
         for c, end in video.iter_with_endpoints():
             print(str(c), ", ", file=f)
-            print(f"# {end} {audio.tick_type(end)}", file=f)
+            print(f"# {round(end, 2)} {audio.tick_type(end)}", file=f)
         print("]", file=f)
 
 

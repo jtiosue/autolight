@@ -8,6 +8,10 @@ examples/**/*.mp4
 examples/**/*.MP4
 examples/**/*.mov
 examples/**/*.MOV
+examples/**/*.png
+examples/**/*.PNG
+examples/**/*.jpg
+examples/**/*.JPG
 
 # mac
 .DS_Store

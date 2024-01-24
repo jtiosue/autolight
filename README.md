@@ -14,6 +14,7 @@ See `examples/` for how to format `filename.py`.
 
 - Need `brew install imagemagick`
 - For crossfading, do `crossfadein=2` and `padding=-2`.
+- The current `get_file_duration` function only works for macs, but there are crossplatform ways of doing it that are commented out.
 
 
 ## To do
