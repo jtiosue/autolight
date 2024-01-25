@@ -12,7 +12,8 @@ if __name__ == "__main__":
     if len(arguments) == 2 and arguments[0].strip() in (
         "generate",
         "autogenerate",
-        "autoschedule" "audioticks",
+        "autoschedule",
+        "audioticks",
         "parse",
     ):
         command, filename = arguments[0].strip(), arguments[1].strip()

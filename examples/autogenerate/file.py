@@ -1,6 +1,6 @@
 [
-    # these two audio clips will occur one after the other
-    Clip(
+    # these two audio dicts will occur one after the other
+    dict(
         filename="media/audio1.mp3",
         fadein=5,
         majorticks=[
@@ -46,34 +46,32 @@
         ],
     ),
     # this video will be muted
-    Clip(filename="media/hockey.mp4", start=0, end=10, fadein=5, volume=0, trim="none"),
+    dict(filename="media/hockey.mp4", start=0, end=10, fadein=5, volume=0, trim="none"),
     # the text will occur on top of the video (important that text comes after video)
-    CompositeClip(
-        [
-            Clip(
-                filename="media/lacy.mp4",
-                start=0,
-                end=10,
-                fadeout=1.2,
-                crossfadein=2,
-                padding=-2,
-            ),
-            Clip(
-                text="hello world",
-                color="red",
-                fontsize=40,
-                duration=8,
-                position=("center", "center"),
-                fadein=5,
-            ),
-        ]
-    ),
-    Clip(filename="media/hockey.mp4", start=100, end=115),
-    Clip(filename="media/hockey.mp4", start=0, end=20),
-    Clip(filename="media/lacy.mp4", start=10, end=30, trim="symmetric"),
-    Clip(filename="media/lacy.mp4", start=30, end=41, trim="end"),
-    Clip(filename="media/hockey.mp4", start=5, end=45),
-    Clip(
+    [
+        dict(
+            filename="media/lacy.mp4",
+            start=0,
+            end=10,
+            fadeout=1.2,
+            crossfadein=2,
+            padding=-2,
+        ),
+        dict(
+            text="hello world",
+            color="red",
+            fontsize=40,
+            duration=8,
+            position=("center", "center"),
+            fadein=5,
+        ),
+    ],
+    dict(filename="media/hockey.mp4", start=100, end=115),
+    dict(filename="media/hockey.mp4", start=0, end=20),
+    dict(filename="media/lacy.mp4", start=10, end=30, trim="symmetric"),
+    dict(filename="media/lacy.mp4", start=30, end=41, trim="end"),
+    dict(filename="media/hockey.mp4", start=5, end=45),
+    dict(
         filename="media/lacy.mp4",
         start=0,
         end=5,
@@ -81,24 +79,22 @@
         # crossfadein=2,
         # padding=-2,
     ),
-    CompositeClip(
-        [
-            Clip(
-                filename="media/photo.png",
-                duration=5,
-                fadeout=5,
-                position=("center", "center"),
-                crossfadein=2,
-                padding=-2,
-            ),
-            Clip(
-                text="goodbye",
-                duration=5,
-                fadeout=5,
-                position=("center", "center"),
-                color="purple",
-                fontsize=50,
-            ),
-        ]
-    ),
+    [
+        dict(
+            filename="media/photo.png",
+            duration=5,
+            fadeout=5,
+            position=("center", "center"),
+            crossfadein=2,
+            padding=-2,
+        ),
+        dict(
+            text="goodbye",
+            duration=5,
+            fadeout=5,
+            position=("center", "center"),
+            color="purple",
+            fontsize=50,
+        ),
+    ],
 ]

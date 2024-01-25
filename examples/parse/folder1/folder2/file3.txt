@@ -1,6 +1,6 @@
 [
-    CompositeClip([
-        Clip(filename='filename in folder2', start=5, end=8),
-        Clip(text="hello world", duration=3)
-    ])
+    [
+        dict(filename='filename in folder2', start=5, end=8),
+        dict(text="hello world", duration=3)
+    ]
 ]

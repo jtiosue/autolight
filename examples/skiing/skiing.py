@@ -1,5 +1,5 @@
 [
-    Clip(
+    dict(
         filename="audio.mp3",
         start=0,
         end=80,
@@ -68,32 +68,30 @@
             175.79,
         ],
     ),
-    CompositeClip(
-        [
-            Clip(
-                filename="first.MOV",
-                start=5,
-                end=38,
-                volume=0,
-                fadein=5,
-                width=800,
-                height=1080,
-            ),
-            Clip(
-                text="Copper Mountain, CO",
-                fontsize=60,
-                color="red",
-                position=("center", "center"),
-                duration=10,
-                fadein=3,
-                fadeout=4,
-            ),
-        ]
-    ),
-    Clip(filename="second.MOV", start=3, end=10, volume=0, trim="none", crossfadeout=1),
-    Clip(filename="second.MOV", start=65, end=90, volume=0, crossfadein=2),
-    Clip(filename="third.MOV", start=15, end=40, volume=0, width=800, height=1080),
-    Clip(
+    [
+        dict(
+            filename="first.MOV",
+            start=5,
+            end=38,
+            volume=0,
+            fadein=5,
+            width=800,
+            height=1080,
+        ),
+        dict(
+            text="Copper Mountain, CO",
+            fontsize=60,
+            color="red",
+            position=("center", "center"),
+            duration=10,
+            fadein=3,
+            fadeout=4,
+        ),
+    ],
+    dict(filename="second.MOV", start=3, end=10, volume=0, trim="none", crossfadeout=1),
+    dict(filename="second.MOV", start=65, end=90, volume=0, crossfadein=2),
+    dict(filename="third.MOV", start=15, end=40, volume=0, width=800, height=1080),
+    dict(
         filename="fourth.MOV",
         start=60,
         end=69,
@@ -102,8 +100,8 @@
         width=800,
         height=1080,
     ),
-    Clip(filename="fifth.MOV", start=98, end=103, volume=0, width=800, height=1080),
-    Clip(
+    dict(filename="fifth.MOV", start=98, end=103, volume=0, width=800, height=1080),
+    dict(
         filename="fourth.MOV",
         # start=85,
         # end=91,

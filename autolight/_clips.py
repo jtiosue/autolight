@@ -3,6 +3,7 @@ import subprocess
 __all__ = "Clip", "CompositeClip", "VideoClips", "AudioClips"
 
 
+# TO DO: make this a subclass of dict? Or maybe don't do this.
 class Clip:
     DEFAULTS = dict(
         start=0,
@@ -70,6 +71,12 @@ class Clip:
                     return super().__getattr__(name)
                 return Clip.DEFAULTS[name]
 
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
     def copy(self):
         return Clip(**self.__dict__)
 
@@ -121,7 +128,8 @@ class Clip:
                 self.end = min(self.start + new_duration * self.speed, self._videoend)
 
     def __str__(self) -> str:
-        return f"{type(self).__name__}(**{str({k: v for k, v in self.__dict__.items() if k[0] != '_'})})"
+        # return f"{type(self).__name__}(**{str({k: v for k, v in self.__dict__.items() if k[0] != '_'})})"
+        return str({k: v for k, v in self.__dict__.items() if k[0] != "_"})
 
     def __repr__(self) -> str:
         return str(self)
@@ -175,10 +183,8 @@ class CompositeClip(Clip):
         return CompositeClip([c.copy() for c in self.clips])
 
     def __str__(self):
-        # return "%s(%s)" % (type(self).__name__, str([str(x) for x in self]))
-        s = type(self).__name__ + "(["
-        s += ", ".join([str(x) for x in self])
-        return s + "])"
+        # return type(self).__name__ + "([" + ", ".join([str(x) for x in self]) + "])"
+        return str([x for x in self])
 
     def __iter__(self):
         for c in self.clips:
