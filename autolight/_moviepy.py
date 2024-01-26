@@ -1,7 +1,9 @@
-from . import VideoClips, AudioClips, Clip, CompositeClip
+from . import VideoClips, AudioClips, Clip, CompositeClip, get_file_info
 
 
 __all__ = "generate_file_moviepy", "generate_clip_moviepy"
+
+RESOLUTION_WIDTHS = {540: 960, 720: 1280, 1080: 1920}
 
 
 def generate_file_moviepy(
@@ -42,7 +44,7 @@ def generate_file_moviepy(
     # compose is important for when the video/images have different sizes
     # https://stackoverflow.com/questions/74170641/is-there-an-issue-with-moviepys-concatenate-videoclips-function-or-is-my-imp
     if mp_video:
-        mp_video = mp.concatenate_videoclips(mp_video, method="compose")
+        mp_video = mp.concatenate_videoclips(mp_video)  # method="compose")
         if mp_audio:
             mp_audio = mp.concatenate_audioclips(mp_audio)
             if mp_video.audio:
@@ -91,6 +93,8 @@ def generate_clip_moviepy(clip: Clip):
 
     afx, vfx = mp.afx, mp.vfx
 
+    clip = clip.copy()
+
     if type(clip) == CompositeClip:
         mp_clip = generate_clip_moviepy(clip[0])
         for i in range(1, len(clip)):
@@ -112,7 +116,7 @@ def generate_clip_moviepy(clip: Clip):
         for key in ("color", "fontsize", "font", "bg_color"):  # add more
             # if key in clip:
             #     kwargs[key] = getattr(clip, key)
-            kwargs[key] = clip[key] # will get the default if nothing was supplied
+            kwargs[key] = clip[key]  # will get the default if nothing was supplied
             # kwargs[key] = getattr(clip, key) # same thing as kwargs[key] = clip[key]
         mp_elem = kind_to_class[clip.kind](clip.text, **kwargs)
     else:
@@ -141,6 +145,15 @@ def generate_clip_moviepy(clip: Clip):
         mp_elem = mp_elem.crossfadein(clip.crossfadein)
     if "crossfadeout" in clip:
         mp_elem = mp_elem.crossfadeout(clip.crossfadeout)
+
+    if clip.portrait:
+        clip.rotate -= 90
+        # mp_elem = mp_elem.rotate(-90, expand=False)
+    if "rotate" in clip:
+        # https://github.com/Zulko/moviepy/issues/1042
+        # mp_elem = mp_elem.add_mask().rotate(clip.rotate, expand=False)
+        mp_elem = mp_elem.rotate(clip.rotate, expand=False)
+
     if "height" in clip or "width" in clip:
         # there is an annoying bug in moviepy
         # https://stackoverflow.com/questions/76616042/attributeerror-module-pil-image-has-no-attribute-antialias
@@ -153,34 +166,121 @@ def generate_clip_moviepy(clip: Clip):
             mp_elem = mp_elem.resize(width=clip.width)
         else:
             mp_elem = mp_elem.resize(height=clip.height)
-    if "rotate" in clip:
-        # https://github.com/Zulko/moviepy/issues/1042
-        # mp_elem = mp_elem.add_mask().rotate(clip.rotate, expand=False)
-        mp_elem = mp_elem.rotate(clip.rotate, expand=False)
+        height, width = mp_elem.size
+    elif not clip.is_audio():
+        height = clip.resolution
+        if height not in RESOLUTION_WIDTHS:
+            raise ValueError(
+                "Resolution must be in %s" % list(RESOLUTION_WIDTHS.keys())
+            )
+        width = RESOLUTION_WIDTHS[height]
+        # moviepy doesn't get actual height and width right, it includes black space.
+        # I think it only happens because of the rotation above
+        if "filename" in clip and clip.portrait:
+            w, h = get_file_info(clip.filename, "PixelWidth"), get_file_info(
+                clip.filename, "PixelHeight"
+            )
+            moviepy_w, moviepy_h = mp_elem.size
+            shavew, shaveh = max(moviepy_w - w, 0), max(moviepy_h - h, 0)
+            if shavew or shaveh:
+                mp_elem = mp_elem.crop(
+                    x1=int(shavew / 2),
+                    y1=int(shaveh / 2),
+                    x2=moviepy_w - int(shavew / 2),
+                    y2=moviepy_h - int(shaveh / 2),
+                )
+        w, h = mp_elem.size
+
+        if clip.is_image() and (width, height) != (w, h):
+            # there is an annoying bug in moviepy
+            # https://stackoverflow.com/questions/76616042/attributeerror-module-pil-image-has-no-attribute-antialias
+            import PIL
+
+            PIL.Image.ANTIALIAS = PIL.Image.Resampling.LANCZOS
+
+            r = max(width / w, height / h)
+            w, h = round(r * w), round(r * h)
+            mp_elem = mp_elem.resize(
+                newsize=(round(r * mp_elem.w), round(r * mp_elem.h))
+            )
+
+            if w > width:
+                if "pan" not in clip:
+                    clip.pan = "right"
+            elif h > height:
+                if "pan" not in clip:
+                    clip.pan = "up"
+
+        if clip.is_video() and (width, height) != (w, h):
+            # TO DO.
+            pass
+
+    if "pan" in clip:  # need to also do crop
+        # https://stackoverflow.com/questions/44225481/moviepy-crop-video-with-frame-region-of-interest-moving-from-left-to-right-w
+        # https://practicalpython.yasoob.me/chapter8
+        # https://moviepy-tburrows13.readthedocs.io/en/latest/_modules/moviepy/video/fx/scroll.html
+        w, h = mp_elem.size
+        xmax, ymax = w - width - 1, h - height - 1
+        x_start, y_start = 0, 0
+        x_speed, y_speed = (w - width) / clip.duration, (h - height) / clip.duration
+        match clip.pan:
+            case "right":
+                y_speed = 0
+            case "left":
+                y_speed = 0
+                x_start = xmax
+                x_speed *= -1
+            case "down":
+                x_speed = 0
+            case "up":
+                x_speed = 0
+                y_start = ymax
+                y_speed *= -1
+            case "none":
+                x_speed, y_speed = 0, 0
+                x_start, y_start = round(xmax / 2), round(ymax / 2)
+            case _:
+                raise ValueError("Unsupported pan")
+
+        def fl(gf, t):
+            x = int(max(0, min(xmax, x_start + round(x_speed * t))))
+            y = int(max(0, min(ymax, y_start + round(y_speed * t))))
+            return gf(t)[y : y + height, x : x + width]
+
+        mp_elem = mp_elem.fl(fl, apply_to=["mask"])
+        if "fps" in clip:
+            mp_elem = mp_elem.set_fps(clip.fps)
+        else:
+            mp_elem = mp_elem.set_fps(60)  # panning is bad with less fps
+
+        # if clip.pan == "right":
+        #     # https://stackoverflow.com/questions/73521169/move-across-image-using-moviepy
+        #     mp_elem = mp.CompositeVideoClip(
+        #         [mp_elem.set_position(lambda t: (t * 10 + 50, "center"))]
+        #     )
+        # elif clip.pan == "left":
+        #     mp_elem = mp.CompositeVideoClip(
+        #         [mp_elem.set_position(lambda t: (-t * 10 - 50 + mp_elem.w, "center"))]
+        #     )
+        # elif clip.pan == "up":
+        # mp_elem = mp.CompositeVideoClip(
+        #     [mp_elem.set_position(lambda t: ("center", t * 10 + 50))]
+        # )
+        # elif clip.pan == "down":
+        #     mp_elem = mp.CompositeVideoClip(
+        #         [mp_elem.set_position(lambda t: ("center", -t * 10 - 50 + mp_elem.h))]
+        #     )
+        # else:
+        #     mp_elem = mp.CompositeVideoClip([mp_elem.set_position(clip.pan)])
+
     if "zoom" in clip:
         if clip.zoom == "in":
-            mp_elem = mp_elem.resize(lambda t: 1 + 0.2 * t)
-        if clip.zoom == "out":
-            duration = clip
-            mp_elem = mp_elem.resize(lambda t: 1 + 0.2 * (mp_elem.duration - t))
-    if "pan" in clip:  # need to also do crop
-        if clip.pan == "right":
-            # https://stackoverflow.com/questions/73521169/move-across-image-using-moviepy
-            mp_elem = mp.CompositeVideoClip(
-                [mp_elem.set_position(lambda t: (t * 10 + 50, "center"))]
-            )
-        elif clip.pan == "left":
-            mp_elem = mp.CompositeVideoClip(
-                [mp_elem.set_position(lambda t: (-t * 10 - 50 + mp_elem.w, "center"))]
-            )
-        elif clip.pan == "up":
-            mp_elem = mp.CompositeVideoClip(
-                [mp_elem.set_position(lambda t: ("center", t * 10 + 50))]
-            )
-        elif clip.pan == "down":
-            mp_elem = mp.CompositeVideoClip(
-                [mp_elem.set_position(lambda t: ("center", -t * 10 - 50 + mp_elem.h))]
-            )
+            mp_elem = mp_elem.resize(lambda t: 1 + 0.1 * t)
+        elif clip.zoom == "out":
+            mp_elem = mp_elem.resize(lambda t: 1 + 0.1 * (mp_elem.duration - t))
+        else:
+            mp_elem = mp_elem.resize(clip.zoom)
+
     if "speed" in clip:
         mp_elem = mp_elem.speedx(clip.speed)
 

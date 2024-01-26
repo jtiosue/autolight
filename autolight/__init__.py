@@ -1,3 +1,4 @@
+from ._file_info import *
 from ._clips import *
 from ._parse import *
 from ._auto_schedule import *
