@@ -41,6 +41,8 @@ if __name__ == "__main__":
     command = args.pop("command")
     filename = args.pop("filename")
     options = {k: v for k, v in args.items() if v is not None}
+    if not options["debug"]:
+        options.pop("debug")
 
     match command:
         case "generate":

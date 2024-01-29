@@ -66,9 +66,7 @@ def generate_file_moviepy(
         mp_audio.write_audiofile(output_filename + ".mp3")
 
 
-def concatenate_with_padding(
-    clip1: Clip, clip2: Clip, padding, audio=False, after=True
-):
+def concatenate_with_padding(clip1, clip2, padding, audio=False, after=True):
     import moviepy.editor as mp
 
     # https://www.reddit.com/r/moviepy/comments/2f43e3/crossfades/
@@ -100,7 +98,7 @@ def generate_clip_moviepy(clip: Clip):
         for i in range(1, len(clip)):
             c = clip[i]
             mp_clip = concatenate_with_padding(
-                mp_clip, generate_clip_moviepy(c), c.padding, False, False
+                mp_clip, generate_clip_moviepy(c), c.padding, clip.is_audio(), False
             )
         return mp_clip
 

@@ -171,6 +171,13 @@ class CompositeClip(Clip):
         self.clips = clips
         if not clips:
             raise ValueError("No clips provided to CompositeClip")
+        elif not (
+            all(c.is_audio() for c in clips) or all(not c.is_audio() for c in clips)
+        ):
+            raise ValueError(
+                "CompositeClip must have either all audio clips or all video/image/text clips"
+            )
+
         for i in range(1, len(clips)):
             if clips[i].duration + clips[i].padding > clips[0].duration:
                 raise ValueError(
