@@ -156,7 +156,10 @@ def generate_clip_moviepy(clip: Clip):
     if "rotate" in clip:
         # https://github.com/Zulko/moviepy/issues/1042
         # mp_elem = mp_elem.add_mask().rotate(clip.rotate, expand=False)
-        mp_elem = mp_elem.rotate(clip.rotate, expand=False)
+        # mp_elem = mp_elem.rotate(clip.rotate, expand=False)
+
+        # mp_elem = mp_elem.add_mask().rotate(clip.rotate)
+        mp_elem = mp_elem.rotate(clip.rotate)
 
     if "height" in clip or "width" in clip:
         # there is an annoying bug in moviepy
@@ -180,19 +183,29 @@ def generate_clip_moviepy(clip: Clip):
         width = RESOLUTION_WIDTHS[height]
         # moviepy doesn't get actual height and width right, it includes black space.
         # I think it only happens because of the rotation above
-        if "filename" in clip and clip.portrait:
+        # if "filename" in clip and clip.portrait:
+        if "filename" in clip and (clip.portrait or clip.resize):
             w, h = get_file_info(clip.filename, "PixelWidth"), get_file_info(
                 clip.filename, "PixelHeight"
             )
             moviepy_w, moviepy_h = mp_elem.size
-            shavew, shaveh = max(moviepy_w - w, 0), max(moviepy_h - h, 0)
-            if shavew or shaveh:
-                mp_elem = mp_elem.crop(
-                    x1=int(shavew / 2),
-                    y1=int(shaveh / 2),
-                    x2=moviepy_w - int(shavew / 2),
-                    y2=moviepy_h - int(shaveh / 2),
-                )
+            if clip.portrait:
+                shavew, shaveh = max(moviepy_w - w, 0), max(moviepy_h - h, 0)
+                if shavew or shaveh:
+                    mp_elem = mp_elem.crop(
+                        x1=int(shavew / 2),
+                        y1=int(shaveh / 2),
+                        x2=moviepy_w - int(shavew / 2),
+                        y2=moviepy_h - int(shaveh / 2),
+                    )
+            # moviepy has the weird bug where it sometimes stretches videos weirdly.
+            # so this just resizes it to its actual size.
+            elif clip.resize and (w, h) != (moviepy_w, moviepy_h):
+                import PIL
+
+                PIL.Image.ANTIALIAS = PIL.Image.Resampling.LANCZOS
+                mp_elem = mp_elem.resize(newsize=(w, h))
+
         w, h = mp_elem.size
 
         if clip.is_image() or clip.is_video() and (width, height) != (w, h):
@@ -204,9 +217,7 @@ def generate_clip_moviepy(clip: Clip):
 
             r = max(width / w, height / h)
             w, h = round(r * w), round(r * h)
-            mp_elem = mp_elem.resize(
-                newsize=(round(r * mp_elem.w), round(r * mp_elem.h))
-            )
+            mp_elem = mp_elem.resize(newsize=(w, h))
 
             if w > width:
                 if "pan" not in clip:
@@ -238,19 +249,19 @@ def generate_clip_moviepy(clip: Clip):
                 y_speed *= -1
             case "center":
                 x_speed, y_speed = 0, 0
-                x_start, y_start = round(xmax / 2), round(ymax / 2)
+                x_start, y_start = round(xmax / 2) if xmax != -1 else -1, round(ymax / 2) if ymax != -1 else -1
             case "north":
                 x_speed, y_speed = 0, 0
-                x_start, y_start = round(xmax / 2), 0
+                x_start, y_start = round(xmax / 2) if xmax != -1 else -1, 0
             case "south":
                 x_speed, y_speed = 0, 0
-                x_start, y_start = round(xmax / 2), ymax
+                x_start, y_start = round(xmax / 2) if xmax != -1 else -1, ymax
             case "east":
                 x_speed, y_speed = 0, 0
-                x_start, y_start = xmax, round(ymax / 2)
+                x_start, y_start = xmax, round(ymax / 2) if ymax != -1 else -1
             case "west":
                 x_speed, y_speed = 0, 0
-                x_start, y_start = 0, round(ymax / 2)
+                x_start, y_start = 0, round(ymax / 2) if ymax != -1 else -1
             case _:
                 raise ValueError("Unsupported pan: %s" % clip.pan)
 
@@ -260,9 +271,10 @@ def generate_clip_moviepy(clip: Clip):
             return gf(t)[y : y + height, x : x + width]
 
         mp_elem = mp_elem.fl(fl, apply_to=["mask"])
+
         if "fps" in clip:
             mp_elem = mp_elem.set_fps(clip.fps)
-        else:
+        elif clip.pan in ("right", "left", "up", "down") and clip.is_image():
             mp_elem = mp_elem.set_fps(60)  # panning is bad with less fps
 
         # if clip.pan == "right":

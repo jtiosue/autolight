@@ -36,6 +36,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--rotate", type=int, help="Angle in degrees to rotate the video"
     )
+    parser.add_argument(
+        "--resize", action="store_true",
+        help="Whether or not to check every video size against moviepy's calculation and fix a rare but occational moviepy bug"
+    )
 
     args = vars(parser.parse_args())
     command = args.pop("command")
@@ -43,6 +47,8 @@ if __name__ == "__main__":
     options = {k: v for k, v in args.items() if v is not None}
     if not options["debug"]:
         options.pop("debug")
+    if not options["resize"]:
+        options.pop("resize")
 
     match command:
         case "generate":

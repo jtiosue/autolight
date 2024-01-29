@@ -17,6 +17,7 @@ class Clip:
         trim="symmetric",
         rotate=0,
         portrait=False,
+        resize=False,
         resolution=720,
         majorticks=[],
         minorticks=[],
