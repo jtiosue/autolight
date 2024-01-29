@@ -24,6 +24,7 @@ For each of the commands (except for `parse` and `audioticks`), you can supply o
 - For portrait videos/pictures, you should set `portrait=True`. 
 - Setting `resolution=540` or `720` or `1080` will automatically fit every video to that size, possibly adding a zoom and/or pan. By default, `resolution=720`. You can override this by automatically supplying `width, height, zoom, pan` keywords. `height` and/or `width` will override `resolution`.
 - You can set meta info for a clip with the `info="stuff"` keyword argument. If you run autolight in debug mode, `"stuff"` will automatically appear in the upper right hand corner. In debug mode, resolution will automatically be set to 240 and fps to 10 unless they are manually specified in the file.
+- `pan=` up, down, left, or right dynamically pans in those directions. On the other hand, `pan=` north, south, east, west, center keeps it stationary on the top, bottom, right, left, or center of the image/video. Use these options if your image or video is not the correct aspect ratio.
 
 
 ## To do
@@ -32,5 +33,5 @@ For each of the commands (except for `parse` and `audioticks`), you can supply o
 - Fix zoom.
 - I think width/height doesn't work. Only resolution works. That might be because I still need to keep `concatenate_videos` with `method='compose`. Not sure.
 - Instead of needing to supply `portrait=True`, somehow check to see if moviepy automatically rotated the image/video for some reason.
-- Deal with when a video is not the desired size; e.g. portrait video. It might already work, not sure, need to test.
+- Add option to allow portrait images to have their black sides.
 - Allow a video option to be audio fade in. More generally, allow an option so that during a certain video or a certain part of a video, the music fades out a little while the audio from the video fade in a little, and then fades out while the music fades back in. The way to do this is probably to allow a Clip to have `fadeout_audio`, `fadein_audio`, and `bg_audio_volume`. The `fadeout_audio` option fades out the audio from the video, and similarly for fadein. The `bg_audio_volume` fades out the the background audio to that volume, then keeps it there for the duration of the video clip, then fades the background audio back in to its original volume. We just need to get the timing of the video clip, then split the audio at that time and work with the audio.

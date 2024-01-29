@@ -236,11 +236,23 @@ def generate_clip_moviepy(clip: Clip):
                 x_speed = 0
                 y_start = ymax
                 y_speed *= -1
-            case "none":
+            case "center":
                 x_speed, y_speed = 0, 0
                 x_start, y_start = round(xmax / 2), round(ymax / 2)
+            case "north":
+                x_speed, y_speed = 0, 0
+                x_start, y_start = round(xmax / 2), 0
+            case "south":
+                x_speed, y_speed = 0, 0
+                x_start, y_start = round(xmax / 2), ymax
+            case "east":
+                x_speed, y_speed = 0, 0
+                x_start, y_start = xmax, round(ymax / 2)
+            case "west":
+                x_speed, y_speed = 0, 0
+                x_start, y_start = 0, round(ymax / 2)
             case _:
-                raise ValueError("Unsupported pan")
+                raise ValueError("Unsupported pan: %s" % clip.pan)
 
         def fl(gf, t):
             x = int(max(0, min(xmax, x_start + round(x_speed * t))))
