@@ -9,9 +9,10 @@ class Clip:
         start=0,
         speed=1,
         padding=0,
-        fontsize=30,
+        fontsize=40,
         font="Courier",
         color="red",
+        stroke_width=1,
         bg_color=b"transparent",
         trim="symmetric",
         rotate=0,
@@ -158,6 +159,11 @@ class CompositeClip(Clip):
         self.clips = clips
         if not clips:
             raise ValueError("No clips provided to CompositeClip")
+        for i in range(1, len(clips)):
+            if clips[i].duration + clips[i].padding > clips[0].duration:
+                raise ValueError(
+                    f"In CompositeClip, the first clip should be the longest (compared to others with padding): {clips}"
+                )
         super().__init__(**clips[0].__dict__)
         self._initialized = True
 

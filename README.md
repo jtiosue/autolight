@@ -27,6 +27,9 @@ See `examples/` for how to format `filename.py`.
 
 - Aspect ratio. [Maybe relevant](https://stackoverflow.com/questions/66775386/moviepy-distorting-concatenated-portrait-videos). In the meantime, when the aspect ratio gets messed up, just manually supply `height` or `width` for a clip.
 - Fade text, `bg_color` needs to be transparent: [https://github.com/Zulko/moviepy/issues/400](https://github.com/Zulko/moviepy/issues/400). Possibly use masks?
-- Fix zoom. Also I think width/height doesn't work. Only resolution works.
+- Fix zoom.
+- I think width/height doesn't work. Only resolution works. That might be because I still need to keep `concatenate_videos` with `method='compose`. Not sure.
 - Instead of needing to supply `portrait=True`, somehow check to see if moviepy automatically rotated the image/video for some reason.
-- Deal with when a video is not the desired size; e.g. portrait video.
+- Deal with when a video is not the desired size; e.g. portrait video. It might already work, not sure, need to test.
+- Allow a video option to be audio fade in. More generally, allow an option so that during a certain video or a certain part of a video, the music fades out a little while the audio from the video fade in a little, and then fades out while the music fades back in.
+- For each clip, you can supply `debug="some message"`. Allow autolight to be run in debug mode. For example, `python -m autolight generate --debug filename.py` should add a text message on each clip for the duration of the clip that says the message associated to each clip.

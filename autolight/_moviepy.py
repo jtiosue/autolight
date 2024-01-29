@@ -113,7 +113,13 @@ def generate_clip_moviepy(clip: Clip):
 
     if clip.is_text():
         kwargs = {}
-        for key in ("color", "fontsize", "font", "bg_color"):  # add more
+        for key in (
+            "color",
+            "fontsize",
+            "font",
+            "bg_color",
+            "stroke_width",
+        ):  # add more
             # if key in clip:
             #     kwargs[key] = getattr(clip, key)
             kwargs[key] = clip[key]  # will get the default if nothing was supplied
@@ -191,7 +197,7 @@ def generate_clip_moviepy(clip: Clip):
                 )
         w, h = mp_elem.size
 
-        if clip.is_image() and (width, height) != (w, h):
+        if clip.is_image() or clip.is_video() and (width, height) != (w, h):
             # there is an annoying bug in moviepy
             # https://stackoverflow.com/questions/76616042/attributeerror-module-pil-image-has-no-attribute-antialias
             import PIL
@@ -211,11 +217,7 @@ def generate_clip_moviepy(clip: Clip):
                 if "pan" not in clip:
                     clip.pan = "up"
 
-        if clip.is_video() and (width, height) != (w, h):
-            # TO DO.
-            pass
-
-    if "pan" in clip:  # need to also do crop
+    if "pan" in clip:
         # https://stackoverflow.com/questions/44225481/moviepy-crop-video-with-frame-region-of-interest-moving-from-left-to-right-w
         # https://practicalpython.yasoob.me/chapter8
         # https://moviepy-tburrows13.readthedocs.io/en/latest/_modules/moviepy/video/fx/scroll.html

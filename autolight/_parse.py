@@ -23,6 +23,7 @@ def parse_file(
 ) -> Tuple[AudioClips, VideoClips]:
     audio, video = AudioClips([]), VideoClips([])
     options = options or {}
+    convert_keys_to_seconds(options, base_directory)
     with open(os.path.join(base_directory, filename)) as f:
         # use add_directory_to_filename to change the base directory for this file
         # all_lines = eval(add_directory_to_filenames(f.read().strip(), base_directory))
@@ -33,14 +34,18 @@ def parse_file(
         # upon intialization, which requires the filename to be correct.
         if isinstance(line, list):
             for l in line:
-                if "filename" in l:
-                    l["filename"] = os.path.join(base_directory, l["filename"])
-            line = CompositeClip([Clip(**l) for l in line])
+                convert_keys_to_seconds(l, base_directory)
+            # options | l means will concatenate the two.
+            # if there are overlaps, the assignments in l are
+            # given precedence.
+            line = CompositeClip([Clip(**(options | l)) for l in line])
         else:
-            if "filename" in line:
-                line["filename"] = os.path.join(base_directory, line["filename"])
+            convert_keys_to_seconds(line, base_directory)
             if not isinstance(line, File):
-                line = Clip(**line)
+                # options | line means will concatenate the two.
+                # if there are overlaps, the assignments in line are
+                # given precedence.
+                line = Clip(**(options | line))
 
         if isinstance(line, File):
             foptions = options | line.kwargs
@@ -52,16 +57,8 @@ def parse_file(
             audio.extend(faudio)
             video.extend(fvideo)
         elif line.is_audio():
-            for k, v in options.items():
-                if k not in line:
-                    setattr(line, k, v)
-                    # same thing with setitem
-                    # line[k] = v
             audio.append(line)
         else:
-            for k, v in options.items():
-                if k not in line:
-                    setattr(line, k, v)
             video.append(line)
     return audio, video
 
@@ -78,19 +75,52 @@ def write_file(
         print("[", file=f)
         for c, end in audio.iter_with_endpoints():
             print(str(c), ", ", file=f)
-            print(f"# {round(end, 2)} {audio.tick_type(end)}", file=f)
+            print("#", to_hms(round(end, 2)), audio.tick_type(end), file=f)
 
         print("\n", file=f)
 
         for c, end in video.iter_with_endpoints():
             print(str(c), ", ", file=f)
-            print(f"# {round(end, 2)} {audio.tick_type(end)}", file=f)
+            print("#", to_hms(round(end, 2)), audio.tick_type(end), file=f)
         print("]", file=f)
 
 
 def parse_and_write_file(filename: str):
     audio, video = parse_file(filename)
     write_file("parsed_" + filename, audio, video)
+
+
+def to_seconds(t):
+    if isinstance(t, str):
+        seconds = 0
+        for part in t.split(":"):
+            seconds = seconds * 60 + float(part)
+        return seconds
+    return t
+
+
+def to_hms(seconds):
+    fraction = seconds - int(seconds)
+    seconds = int(seconds)
+    hours = seconds // 3600
+    seconds -= hours * 3600
+    minutes = seconds // 60
+    seconds -= minutes * 60
+    s = f"{hours}:" if hours else ""
+    s += f"{minutes}:" if hours or minutes else ""
+    s += f"{round(seconds + fraction, 2)}"
+    return s
+
+
+def convert_keys_to_seconds(line, base_directory):
+    if "filename" in line:
+        line["filename"] = os.path.join(base_directory, line["filename"])
+    for key in ("start", "end", "duration"):
+        if key in line:
+            line[key] = to_seconds(line[key])
+    for key in ("minorticks", "majorticks"):
+        if key in line:
+            line[key] = [to_seconds(x) for x in line[key]]
 
 
 ### Add the directory to filenames by using regex.
