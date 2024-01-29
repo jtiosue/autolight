@@ -68,7 +68,7 @@
     ],
     dict(filename="media/hockey.mp4", start=100, end=115),
     dict(filename="media/hockey.mp4", start=0, end=20),
-    dict(filename="media/lacy.mp4", start=10, end=30, trim="symmetric"),
+    dict(filename="media/lacy.mp4", start=10, end=30, trim="symmetric", info="Lacy!!"),
     dict(filename="media/lacy.mp4", start=30, end=41, trim="end"),
     dict(filename="media/hockey.mp4", start=5, end=45),
     dict(

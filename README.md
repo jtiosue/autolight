@@ -8,6 +8,8 @@ Automatically make compilation highlight videos
 - `python -m autolight autoschedule filename.py` to take a list of audio and video clips and generate a new `auto_filename.py` from it that is nicely compiled to the audio. You can then create the new video with `python -m autolight generate auto_filename.py`.
 - `python -m autolight autogenerate filename.py` simply runs `python -m autolight autoschedule filename.py && python -m autolight generate auto_filename.py`.
 
+For each of the commands (except for `parse` and `audioticks`), you can supply optional keyword arguments; e.g. `--volume 0 --resolution 720 --debug`.
+
 See `examples/` for how to format `filename.py`.
 
 
@@ -21,6 +23,7 @@ See `examples/` for how to format `filename.py`.
 - As per [moviepy](https://stackoverflow.com/questions/73418729/moviepy-textclip-set-color-to-rgb-value), use rgba values to make thing semitransparent: `color="rgba(255,0,0,.5)"`, where the last value is between 0 and 1.
 - For portrait videos/pictures, you should set `portrait=True`. 
 - Setting `resolution=540` or `720` or `1080` will automatically fit every video to that size, possibly adding a zoom and/or pan. By default, `resolution=720`. You can override this by automatically supplying `width, height, zoom, pan` keywords. `height` and/or `width` will override `resolution`.
+- You can set meta info for a clip with the `info="stuff"` keyword argument. If you run autolight in debug mode, `"stuff"` will automatically appear in the upper right hand corner. In debug mode, resolution will automatically be set to 240 and fps to 20 unless they are manually specified in the file.
 
 
 ## To do
@@ -32,4 +35,3 @@ See `examples/` for how to format `filename.py`.
 - Instead of needing to supply `portrait=True`, somehow check to see if moviepy automatically rotated the image/video for some reason.
 - Deal with when a video is not the desired size; e.g. portrait video. It might already work, not sure, need to test.
 - Allow a video option to be audio fade in. More generally, allow an option so that during a certain video or a certain part of a video, the music fades out a little while the audio from the video fade in a little, and then fades out while the music fades back in.
-- For each clip, you can supply `debug="some message"`. Allow autolight to be run in debug mode. For example, `python -m autolight generate --debug filename.py` should add a text message on each clip for the duration of the clip that says the message associated to each clip.

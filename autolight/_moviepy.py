@@ -3,7 +3,7 @@ from . import VideoClips, AudioClips, Clip, CompositeClip, get_file_info
 
 __all__ = "generate_file_moviepy", "generate_clip_moviepy"
 
-RESOLUTION_WIDTHS = {540: 960, 720: 1280, 1080: 1920}
+RESOLUTION_WIDTHS = {240: 426, 360: 640, 480: 854, 540: 960, 720: 1280, 1080: 1920}
 
 
 def generate_file_moviepy(
@@ -285,5 +285,22 @@ def generate_clip_moviepy(clip: Clip):
 
     if "speed" in clip:
         mp_elem = mp_elem.speedx(clip.speed)
+
+    if clip.debug and clip.kind in ("video", "image"):
+        mp_elem = mp.CompositeVideoClip(
+            [
+                mp_elem,
+                generate_clip_moviepy(
+                    Clip(
+                        text=clip.info,
+                        bg_color="red",
+                        color="black",
+                        position=("right", "top"),
+                        duration=clip.duration,
+                        fps=clip.fps,
+                    )
+                ),
+            ]
+        )
 
     return mp_elem

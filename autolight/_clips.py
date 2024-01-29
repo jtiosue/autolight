@@ -20,6 +20,7 @@ class Clip:
         resolution=720,
         majorticks=[],
         minorticks=[],
+        debug=False,
     )
 
     def __init__(self, **kwargs):
@@ -42,22 +43,26 @@ class Clip:
                     tickslist[i] += offset
                 tickslist[0] = 0
 
+        if self.debug:
+            if "fps" not in self:
+                self.fps = 20
+            if "resolution" not in self:
+                self.resolution = 240
+
     def __contains__(self, element):
         return element in self.__dict__
 
     def __getattr__(self, name):
+        if name in self:
+            return super().__getattr__(name)
         match name:
             case "end":
-                if name in self:
-                    return super().__getattr__(name)
-                elif "duration" in self:
+                if "duration" in self:
                     return self.start + self.duration
                 time = get_file_info(self.filename, "Duration")
                 setattr(self, name, time)
                 return time
             case "duration":
-                if "duration" in self:
-                    return super().__getattr__(name)
                 return (self.end - self.start) / self.speed
             case "kind":
                 if self.is_text():
@@ -70,9 +75,14 @@ class Clip:
                     return "image"
                 else:
                     return "unknown"
+            case "info":
+                if self.is_text():
+                    return self.text + f"({self.duration})"
+                elif "filename" in self:
+                    return self.filename + f"({self.start}, {self.end})"
+                else:
+                    return ""
             case _:
-                if name in self:
-                    return super().__getattr__(name)
                 return Clip.DEFAULTS[name]
 
     def __getitem__(self, key):

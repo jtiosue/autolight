@@ -19,7 +19,7 @@ class File(dict):
 
 
 def parse_file(
-    filename: str, base_directory="", options=None
+    filename: str, options: dict = None, base_directory: str = ""
 ) -> Tuple[AudioClips, VideoClips]:
     audio, video = AudioClips([]), VideoClips([])
     options = options or {}
@@ -51,8 +51,8 @@ def parse_file(
             foptions = options | line.kwargs
             faudio, fvideo = parse_file(
                 os.path.basename(line.filename),
-                os.path.dirname(line.filename),
                 foptions,
+                os.path.dirname(line.filename),
             )
             audio.extend(faudio)
             video.extend(fvideo)
@@ -85,8 +85,8 @@ def write_file(
         print("]", file=f)
 
 
-def parse_and_write_file(filename: str):
-    audio, video = parse_file(filename)
+def parse_and_write_file(filename: str, options: dict = None):
+    audio, video = parse_file(filename, options)
     write_file("parsed_" + filename, audio, video)
 
 
