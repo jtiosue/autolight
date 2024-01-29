@@ -23,7 +23,7 @@ See `examples/` for how to format `filename.py`.
 - As per [moviepy](https://stackoverflow.com/questions/73418729/moviepy-textclip-set-color-to-rgb-value), use rgba values to make thing semitransparent: `color="rgba(255,0,0,.5)"`, where the last value is between 0 and 1.
 - For portrait videos/pictures, you should set `portrait=True`. 
 - Setting `resolution=540` or `720` or `1080` will automatically fit every video to that size, possibly adding a zoom and/or pan. By default, `resolution=720`. You can override this by automatically supplying `width, height, zoom, pan` keywords. `height` and/or `width` will override `resolution`.
-- You can set meta info for a clip with the `info="stuff"` keyword argument. If you run autolight in debug mode, `"stuff"` will automatically appear in the upper right hand corner. In debug mode, resolution will automatically be set to 240 and fps to 20 unless they are manually specified in the file.
+- You can set meta info for a clip with the `info="stuff"` keyword argument. If you run autolight in debug mode, `"stuff"` will automatically appear in the upper right hand corner. In debug mode, resolution will automatically be set to 240 and fps to 10 unless they are manually specified in the file.
 
 
 ## To do

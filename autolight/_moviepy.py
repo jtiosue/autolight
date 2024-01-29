@@ -297,7 +297,8 @@ def generate_clip_moviepy(clip: Clip):
                         color="black",
                         position=("right", "top"),
                         duration=clip.duration,
-                        fps=clip.fps,
+                        fps=5,
+                        fontsize=16,
                     )
                 ),
             ]

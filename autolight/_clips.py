@@ -45,7 +45,7 @@ class Clip:
 
         if self.debug:
             if "fps" not in self:
-                self.fps = 20
+                self.fps = 10
             if "resolution" not in self:
                 self.resolution = 240
 
@@ -79,7 +79,9 @@ class Clip:
                 if self.is_text():
                     return self.text + f"({self.duration})"
                 elif "filename" in self:
-                    return self.filename + f"({self.start}, {self.end})"
+                    return (
+                        self.filename + f"({round(self.start, 2)},{round(self.end, 2)})"
+                    )
                 else:
                     return ""
             case _:
