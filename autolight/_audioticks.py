@@ -38,7 +38,7 @@ class Window(tk.Tk):
         label2 = self.minor if major else self.major
         string1 = "Major: " if major else "Minor: "
         string2 = "Minor: " if major else "Major: "
-        if not self.t0:
+        if self.t0 is None:
             if self.filename:
                 playsound(self.filename, block=False)
             self.t0 = time.time()
@@ -47,10 +47,12 @@ class Window(tk.Tk):
         ticks1.append(round(time.time() - self.t0, 2))
         label1.set(string1 + str(ticks1))
 
+    # def __call__(self):
+    #     self.mainloop()
+
 
 def audioticks(filename=None):
-    root = Window(filename)
-    root.mainloop()
+    Window(filename).mainloop()
 
 
 if __name__ == "__main__":

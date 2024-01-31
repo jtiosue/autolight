@@ -24,10 +24,14 @@ def parse_file(
     audio, video = AudioClips([]), VideoClips([])
     options = options or {}
     convert_keys_to_seconds(options, base_directory)
-    with open(os.path.join(base_directory, filename)) as f:
+    filename = os.path.join(base_directory, filename)
+    with open(filename) as f:
         # use add_directory_to_filename to change the base directory for this file
         # all_lines = eval(add_directory_to_filenames(f.read().strip(), base_directory))
-        all_lines = eval(f.read().strip())
+        try:
+            all_lines = eval(f.read().strip())
+        except Exception as e:
+            raise e.__class__(f"Error in {filename} -- " + repr(e))
     for line in all_lines:
         # it is important to change the filename before converting the dicts to Clip
         # objects because the Clip object might try to figure out the duration of clip
