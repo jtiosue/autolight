@@ -46,7 +46,14 @@
         ],
     ),
     # this video will be muted
-    dict(filename="media/hockey.mp4", start=0, end=10, fadein=5, volume=0, trim="none"),
+    dict(
+        filename="media/hockey.mp4",
+        start=0,
+        end=10,
+        fadein=5,
+        volume=0,
+        trimmable=False,
+    ),
     # the text will occur on top of the video (important that text comes after video)
     [
         dict(
@@ -75,7 +82,7 @@
         filename="media/lacy.mp4",
         start=0,
         end=5,
-        trim="none",
+        trimmable=False,
         # crossfadein=2,
         # padding=-2,
     ),

@@ -15,6 +15,7 @@ class Clip:
         stroke_width=1,
         bg_color=b"transparent",
         trim="symmetric",
+        trimmable=True,
         rotate=0,
         portrait=False,
         resize=False,
@@ -140,7 +141,7 @@ class Clip:
             case "end":
                 self.end = min(self.end - shave, self._videoend)
                 self.start = max(self.end - new_duration * self.speed, self._videostart)
-            case _:  # symmetric or none
+            case _:  # symmetric
                 self.start = max(self.start + shave / 2, self._videostart)
                 self.end = min(self.start + new_duration * self.speed, self._videoend)
 
@@ -150,9 +151,6 @@ class Clip:
 
     def __repr__(self) -> str:
         return str(self)
-
-    def is_trimmable(self):
-        return self.trim != "none"
 
     def items(self):
         yield from self.__dict__.items()
@@ -248,19 +246,19 @@ class VideoClips(list):
 
     @property
     def trimmable_duration(self):
-        return sum(c.duration + c.padding for c in self if c.is_trimmable())
+        return sum(c.duration + c.padding for c in self if c.trimmable)
 
     @property
     def nontrimmable_duration(self):
-        return sum(c.duration + c.padding for c in self if not c.is_trimmable())
+        return sum(c.duration + c.padding for c in self if not c.trimmable)
 
     @property
     def num_trimmable(self):
-        return sum(1 if x.is_trimmable() else 0 for x in self)
+        return sum(1 if x.trimmable else 0 for x in self)
 
     @property
     def num_nontrimmable(self):
-        return sum(1 if not x.is_trimmable() else 0 for x in self)
+        return sum(1 if not x.trimmable else 0 for x in self)
 
     def iter_with_endpoints(self):
         prev = 0

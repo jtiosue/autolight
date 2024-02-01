@@ -21,7 +21,7 @@ def auto_schedule(audio: AudioClips, video: VideoClips) -> None:
     while len(video) > 1:
         c = video[-1]
 
-        if c.is_trimmable():
+        if c.trimmable:
             # we can assume that each nontrim video gets trimmed by an averge of avg_tick_dist
             r = (
                 audio.duration

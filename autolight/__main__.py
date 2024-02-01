@@ -37,18 +37,29 @@ if __name__ == "__main__":
         "--rotate", type=int, help="Angle in degrees to rotate the video"
     )
     parser.add_argument(
-        "--resize", action="store_true",
-        help="Whether or not to check every video size against moviepy's calculation and fix a rare but occational moviepy bug"
+        "--resize",
+        action="store_true",
+        help="Whether or not to check every video size against moviepy's calculation and fix a rare but occational moviepy bug",
+    )
+    parser.add_argument(
+        "--trim",
+        type=str,
+        choices=["start", "end", "symmetric"],
+    )
+    parser.add_argument(
+        "--trimmable",
+        action="store_true",
+        help="Whether to make videos trimmable for autoscheduling",
     )
 
     args = vars(parser.parse_args())
     command = args.pop("command")
     filename = args.pop("filename")
     options = {k: v for k, v in args.items() if v is not None}
-    if not options["debug"]:
-        options.pop("debug")
-    if not options["resize"]:
-        options.pop("resize")
+
+    for k in ("debug", "resize", "trimmable"):
+        if not options[k]:
+            options.pop(k)
 
     match command:
         case "generate":

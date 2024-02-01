@@ -17,7 +17,7 @@ For each of the commands (except for `parse` and `audioticks`), you can supply o
 
 - Need `brew install imagemagick`
 - For crossfading, do `crossfadein=2` and `padding=-2`.
-- The current `get_file_duration` function only works for macs, but there are crossplatform ways of doing it that are commented out.
+- The current `get_file_info` function only works for macs, but there are crossplatform ways of doing it that are commented out.
 - For `File(filename='directory/file.py', someoptions=4)`, `someoptions=4` will be supplied to all Clips within `directory/file.py` except those that explicitly set something else for `someoptions`.
 - For `File(filename='directory/file.py')`, when reading `directory/file.py`, the base directory will be changed to `directory` for all subsequent files. E.g. if in `directory/file.py` you have `Clip(filename="helloworld.mp4")`, then autolight will look for the `helloworld.mp4` file within `directory/`; i.e. it will look for the file `directory/helloworld.mp4`. To go back up a directory, you can put `Clip(filename="../helloworld.mp4")`. Then, autolight will look for `directory/../helloworld.mp4`, and so will just look for `helloworld.mp4` in the parent directory.
 - As per [moviepy](https://stackoverflow.com/questions/73418729/moviepy-textclip-set-color-to-rgb-value), use rgba values to make thing semitransparent: `color="rgba(255,0,0,.5)"`, where the last value is between 0 and 1.
@@ -25,6 +25,7 @@ For each of the commands (except for `parse` and `audioticks`), you can supply o
 - Setting `resolution=540` or `720` or `1080` will automatically fit every video to that size, possibly adding a zoom and/or pan. By default, `resolution=720`. You can override this by automatically supplying `width, height, zoom, pan` keywords. `height` and/or `width` will override `resolution`.
 - You can set meta info for a clip with the `info="stuff"` keyword argument. If you run autolight in debug mode, `"stuff"` will automatically appear in the upper right hand corner. In debug mode, resolution will automatically be set to 240 and fps to 10 unless they are manually specified in the file.
 - `pan=` up, down, left, or right dynamically pans in those directions. On the other hand, `pan=` north, south, east, west, center keeps it stationary on the top, bottom, right, left, or center of the image/video. Use these options if your image or video is not the correct aspect ratio.
+- For autoschedule, you can utilize the `trimmable` and `trim` keywords. `trimmable` is a boolean (defaults to `True`) specifying whether the autoscheduling algorithm is allowed to trim the video. If you set `trimmable=False`, then the video will only be trimmed a very little bit; just enough to time it with an audiotick. Whether `trimmable=True` or `False`, if the clip is trimmed at all, it will be trimmed based off of `trim`. `trim` can be `'symmetric'` (default), `'start'`, or `'end'`. These specify where to trim the video if the algorithm decides to trim it.
 
 
 ## To do
