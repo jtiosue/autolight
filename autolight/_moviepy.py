@@ -126,12 +126,12 @@ def generate_clip_moviepy(clip: Clip):
     else:
         mp_elem = kind_to_class[clip.kind](clip.filename)
 
-    if not clip.is_audio():
-        mp_elem = mp_elem.set_position(("center", "center"))
+    # if not clip.is_audio():
+    #     mp_elem = mp_elem.set_position(("center", "center"))
 
     if "duration" in clip:
         mp_elem = mp_elem.set_duration(clip.duration)
-    if "fps" in clip:
+    if "fps" in clip and not clip.is_audio():
         mp_elem = mp_elem.set_fps(clip.fps)
     if "start" in clip or "end" in clip:
         mp_elem = mp_elem.subclip(clip.start, clip.end)
@@ -141,6 +141,12 @@ def generate_clip_moviepy(clip: Clip):
     if "fadeout" in clip:
         fadeout = afx.audio_fadeout if clip.is_audio() else vfx.fadeout
         mp_elem = mp_elem.fx(fadeout, clip.fadeout)
+    if "audio_fadein" in clip:
+        fadein = afx.audio_fadein
+        mp_elem = mp_elem.fx(fadein, clip.audio_fadein)
+    if "audio_fadeout" in clip:
+        fadeout = afx.audio_fadeout
+        mp_elem = mp_elem.fx(fadeout, clip.audio_fadeout)
     if "position" in clip:
         mp_elem = mp_elem.set_position(clip.position)
     if "volume" in clip:
@@ -301,7 +307,8 @@ def generate_clip_moviepy(clip: Clip):
         if clip.zoom == "in":
             mp_elem = mp_elem.resize(lambda t: 1 + 0.1 * t)
         elif clip.zoom == "out":
-            mp_elem = mp_elem.resize(lambda t: 1 + 0.1 * (mp_elem.duration - t))
+            mp_elem = mp_elem.resize(lambda t: 1 if not t else 1 + 0.1 * (mp_elem.duration - t))
+            mp_elem = mp.CompositeVideoClip([mp_elem.set_position(('center', 'center'))]).subclip(.01)#.subclip(1./getattr(mp_elem, "fps", 60))
         else:
             mp_elem = mp_elem.resize(clip.zoom)
 

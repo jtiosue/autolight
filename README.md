@@ -26,12 +26,14 @@ For each of the commands (except for `parse` and `audioticks`), you can supply o
 - You can set meta info for a clip with the `info="stuff"` keyword argument. If you run autolight in debug mode, `"stuff"` will automatically appear in the upper right hand corner. In debug mode, resolution will automatically be set to 240 and fps to 10 unless they are manually specified in the file.
 - `pan=` up, down, left, or right dynamically pans in those directions. On the other hand, `pan=` north, south, east, west, center keeps it stationary on the top, bottom, right, left, or center of the image/video. Use these options if your image or video is not the correct aspect ratio.
 - For autoschedule, you can utilize the `trimmable` and `trim` keywords. `trimmable` is a boolean (defaults to `True`) specifying whether the autoscheduling algorithm is allowed to trim the video. If you set `trimmable=False`, then the video will only be trimmed a very little bit; just enough to time it with an audiotick. Whether `trimmable=True` or `False`, if the clip is trimmed at all, it will be trimmed based off of `trim`. `trim` can be `'symmetric'` (default), `'start'`, or `'end'`. These specify where to trim the video if the algorithm decides to trim it.
+- Occationally, transitions between audio clips can glitchy. The reason is [here](https://github.com/Zulko/moviepy/issues/1005) and [here](https://github.com/Zulko/moviepy/issues/1936#issuecomment-1740785869). If it happens, just use `audio_fadein=.25` and/or `audio_fadeout=.25` or whatever durations work.
 
 
 ## To do
 
 - Fade text, `bg_color` needs to be transparent: [https://github.com/Zulko/moviepy/issues/400](https://github.com/Zulko/moviepy/issues/400). Possibly use masks?
-- Fix zoom.
+- Zoom out currently loses a frame. Fix this. Also, allow different zoom speeds.
+- Just recode zoom entirely. I think resize messes with resolution stuff.
 - I think width/height doesn't work. Only resolution works. That might be because I still need to keep `concatenate_videos` with `method='compose`. Not sure.
 - Instead of needing to supply `portrait=True`, somehow check to see if moviepy automatically rotated the image/video for some reason.
 - Add option to allow portrait images to have their black sides.

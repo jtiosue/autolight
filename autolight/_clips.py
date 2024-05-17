@@ -10,7 +10,7 @@ class Clip:
         speed=1,
         padding=0,
         fontsize=40,
-        font="Courier",
+        font="Trebuchet-MS",
         color="red",
         stroke_width=1,
         bg_color=b"transparent",
@@ -178,7 +178,7 @@ class CompositeClip(Clip):
             )
 
         for i in range(1, len(clips)):
-            if clips[i].duration + clips[i].padding > clips[0].duration:
+            if clips[i].duration + clips[i].padding > clips[0].duration + 0.01:
                 raise ValueError(
                     f"In CompositeClip, the first clip should be the longest (compared to others with padding): {clips}"
                 )
@@ -279,8 +279,8 @@ class AudioClips(list):
         self.majorticks, self.minorticks, prev = [], [], 0.0
         for c in self:
             prev += c.padding
-            self.majorticks.extend([prev + x for x in c.majorticks])
-            self.minorticks.extend([prev + x for x in c.minorticks])
+            self.majorticks.extend([prev + x - c.start for x in c.majorticks if c.start <= x <= c.end])
+            self.minorticks.extend([prev + x - c.start for x in c.minorticks if c.start <= x <= c.end])
             prev += c.duration
         self.duration = prev
         self.majorticks = list(sorted(set(self.majorticks)))
@@ -320,6 +320,8 @@ class AudioClips(list):
                 set(x for x in self.majorticks + self.minorticks if start <= x <= end)
             )
         )
+        if not ticks:
+            return 0
         tick_diff = [ticks[i + 1] - ticks[i] for i in range(len(ticks) - 1)]
         if ticks[-1] < self.duration:
             tick_diff.append(self.duration - ticks[-1])
