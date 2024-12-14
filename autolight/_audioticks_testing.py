@@ -48,46 +48,67 @@ class Ticks:
         self.mustticks_lines, self.majorticks_lines, self.minorticks_lines = [], [], []
         self.gui = gui
 
-        gui.fig.canvas.mpl_connect("button_press_event", self.click)
-        gui.fig.canvas.mpl_connect("button_release_event", self.unclick)
-        # gui.fig.canvas.mpl_connect("motion_notify_event", self.motion)
-
-    def add_musttick(self, time, redraw=True):
-        self.mustticks_lines.append(
-            self.gui.ax.vlines(time, -1, 1, linestyle="-", color="k")
+    def add_musttick(self, t, redraw=True):
+        if self.get_tick_index(t, 0)[0]:
+            return
+        self.mustticks.append(
+            (t, self.gui.ax.vlines(t, 0, 1, linestyle="-", color="k"))
         )
-        self.mustticks.append(time)
         if redraw:
             self.gui.redraw()
 
-    def add_majortick(self, time, redraw=True):
-        self.majorticks_lines.append(
-            self.gui.ax.vlines(time, -1, 1, linestyle="--", color="k")
+    def add_majortick(self, t, redraw=True):
+        index = self.get_tick_index(t, 0)
+        if index[0] or index[1]:
+            return
+        self.majorticks.append(
+            (t, self.gui.ax.vlines(t, 0, 1, linestyle="--", color="k"))
         )
-        self.majorticks.append(time)
         if redraw:
             self.gui.redraw()
 
-    def add_minortick(self, time, redraw=True):
-        self.minorticks_lines.append(
-            self.gui.ax.vlines(time, -1, 1, linestyle=":", color="k")
+    def add_minortick(self, t, redraw=True):
+        index = self.get_tick_index(t, 0)
+        if index[0] or index[1] or index[2]:
+            return
+        self.minorticks.append(
+            (t, self.gui.ax.vlines(t, 0, 1, linestyle=":", color="k"))
         )
-        self.minorticks.append(time)
         if redraw:
             self.gui.redraw()
 
     def clear_ticks(self):
-        for l in self.majorticks_lines:
+        for _, l in self.majorticks:
             l.remove()
-        for l in self.minorticks_lines:
+        for _, l in self.minorticks:
             l.remove()
-        for l in self.mustticks_lines:
+        for _, l in self.mustticks:
             l.remove()
         self.mustticks, self.majorticks, self.minorticks = [], [], []
-        self.mustticks_lines, self.majorticks_lines, self.minorticks_lines = [], [], []
 
-    def find_ticks(self, redraw=True):
-        self.clear_ticks()
+    def get_tick_index(self, t, eps=0):
+        xlim = self.gui.ax.get_xlim()
+        amount = (xlim[1] - xlim[0]) * eps
+        index = [], [], []
+        for i in range(len(self.mustticks)):
+            if abs(self.mustticks[i][0] - t) < amount:
+                index[0].append(i)
+        for i in range(len(self.majorticks)):
+            if abs(self.majorticks[i][0] - t) < amount:
+                index[1].append(i)
+        for i in range(len(self.minorticks)):
+            if abs(self.minorticks[i][0] - t) < amount:
+                index[2].append(i)
+        return index
+
+    def get_tickstamps(self):
+        return (
+            [x[0] for x in self.mustticks],
+            [x[0] for x in self.majorticks],
+            [x[0] for x in self.minorticks],
+        )
+
+    def find_ticks(self, redraw=False):
         gui = self.gui
         audio = gui.convolved_audio
         ts = gui.convolved_ts
@@ -95,7 +116,7 @@ class Ticks:
             if t - gui.convolved_ts[0] > 0.05:
                 break
 
-        l = np.linspace(0.1, 1, i // 2)
+        l = np.concatenate((np.linspace(0, 1, i // 4), np.linspace(1, 0, i // 4)))
         caudio = np.convolve(audio, l / np.sum(l))[: -len(l) + 1]
 
         dt = (ts[1] - ts[0]) / 2.0
@@ -127,16 +148,70 @@ class Ticks:
         if redraw:
             self.gui.redraw()
 
-    def click(self, event):
-        x = event.xdata
-        if self.majorticks and abs(x - self.majorticks[-1]) < 0.01:
-            # do something with it
-            pass
+    def toggle_tick(self, tick_index):
+        if tick_index[0]:
+            i = tick_index[0][0]
+            self.majorticks.append(self.mustticks.pop(i))
+            self.majorticks[-1][1].set(linestyle="--")
+            new_index = [], [len(self.majorticks) - 1], []
+        elif tick_index[1]:
+            i = tick_index[1][0]
+            self.minorticks.append(self.majorticks.pop(i))
+            self.minorticks[-1][1].set(linestyle=":")
+            new_index = [], [], [len(self.minorticks) - 1]
         else:
-            self.add_majortick(x)
+            i = tick_index[2][0]
+            self.mustticks.append(self.minorticks.pop(i))
+            self.mustticks[-1][1].set(linestyle="-")
+            new_index = [len(self.mustticks) - 1], [], []
 
-    def unclick(self, event):
-        pass
+        return new_index
+
+    def slide_tick(self, tick_index, direction):
+        if tick_index[0]:
+            i = tick_index[0][0]
+            ticks = self.mustticks
+        elif tick_index[1]:
+            i = tick_index[1][0]
+            ticks = self.majorticks
+        else:
+            i = tick_index[2][0]
+            ticks = self.minorticks
+
+        xlim = self.gui.ax.get_xlim()
+        amount = (xlim[1] - xlim[0]) * direction * 0.01
+        t, vline = ticks[i]
+        t += amount
+        linestyle = vline.get_linestyle()
+        # need to fix this. Probalby make a single tick into a class of its own
+        color = vline.get_color()
+        vline.remove()
+        ticks[i] = (t, self.gui.ax.vlines(t, 0, 1, linestyle=linestyle, color=color))
+
+    def select_tick(self, tick_index, color):
+        if tick_index[0]:
+            i = tick_index[0][0]
+            self.mustticks[i][1].set(color=color)
+        elif tick_index[1]:
+            i = tick_index[1][0]
+            self.majorticks[i][1].set(color=color)
+        else:
+            i = tick_index[2][0]
+            self.minorticks[i][1].set(color=color)
+
+    def delete_tick(self, tick_index):
+        if tick_index[0]:
+            i = tick_index[0][0]
+            ticks = self.mustticks
+        elif tick_index[1]:
+            i = tick_index[1][0]
+            ticks = self.majorticks
+        else:
+            i = tick_index[2][0]
+            ticks = self.minorticks
+
+        vline = ticks.pop(i)[1]
+        vline.remove()
 
 
 class GUI:
@@ -183,21 +258,22 @@ class GUI:
         self.current_center = 4
         self.update_xaxis()
 
-        self.fig.canvas.mpl_connect("key_press_event", self.key_event)
-
         self.ticks = Ticks(self)
 
         self.t0, self.audio_process = None, None
 
         self.current_time = 0
-        self.current_time_bar = self.ax.vlines(0, -1, 1, linestyle="-", color="r")
+        self.current_time_bar = self.ax.vlines(0, -1, 1, linestyle="-", color="orange")
+
+        KeybindLogic(self)
+
+        self.redraw()
 
     def update_xaxis(self):
         self.ax.set_xlim(
             self.current_center - self.time_window_half_size,
             self.current_center + self.time_window_half_size,
         )
-        self.redraw()
 
     def slide_xaxis(self, increment=0):
         self.current_center = max(
@@ -211,7 +287,7 @@ class GUI:
     def update_current_time(self):
         self.current_time_bar.remove()
         self.current_time_bar = self.ax.vlines(
-            self.current_time, -1, 1, linestyle="-", color="r"
+            self.current_time, -1, 1, linestyle="-", color="orange"
         )
         self.current_center = self.current_time
 
@@ -244,41 +320,111 @@ class GUI:
             self.audio_process.terminate()
             self.audio_process = None
 
+
+class KeybindLogic:
+    def __init__(self, gui):
+        self.gui = gui
+        self.ticks = self.gui.ticks
+
+        # self.gui.fig.canvas.mpl_connect("key_press_event", self.key_event)
+        self.gui.fig.canvas.mpl_connect("key_press_event", lambda e: self.key_event(e))
+        # self.gui.fig.canvas.mpl_connect("button_press_event", self.click)
+        self.gui.fig.canvas.mpl_connect("button_press_event", lambda e: self.click(e))
+        # self.gui.fig.canvas.mpl_connect("button_release_event", self.unclick)
+        # self.gui.fig.canvas.mpl_connect("motion_notify_event", self.motion)
+
+        self.tick_selected_index = [], [], []
+        self.is_tick_selected = False
+
+    def click(self, event):
+        # self.downclick_location = event.xdata
+        # self.is_motion = False
+
+        xlim = self.gui.ax.get_xlim()
+        index = self.ticks.get_tick_index(event.xdata, 0.01)
+        if index[0] or index[1] or index[2]:
+            if self.is_tick_selected and index == self.tick_selected_index:
+                self.tick_selected_index = self.ticks.toggle_tick(
+                    self.tick_selected_index
+                )
+            else:
+                if self.is_tick_selected:
+                    self.ticks.select_tick(self.tick_selected_index, "black")
+                self.tick_selected_index = index
+                self.ticks.select_tick(index, "red")
+                self.is_tick_selected = True
+        elif self.is_tick_selected:
+            self.ticks.select_tick(self.tick_selected_index, "black")
+            self.is_tick_selected = False
+        else:
+            self.ticks.add_minortick(event.xdata)
+
+        self.gui.redraw()
+
+    # def unclick(self, event):
+    #     if not self.is_motion:
+    #         index = self.ticks.get_tick_index(event.xdata, 0)
+    #     else:
+    #         pass
+
+    #     self.downclick_location = None
+    #     self.is_motion = None
+
+    # def motion(self, event):
+    #     self.is_motion = True
+
     def key_event(self, event):
         if event.key == "right":
-            self.slide_xaxis(self.time_window_half_size)
-            self.update_xaxis()
+            if not self.is_tick_selected:
+                self.gui.slide_xaxis(self.gui.time_window_half_size)
+                self.gui.update_xaxis()
+            else:
+                self.ticks.slide_tick(self.tick_selected_index, 1)
         elif event.key == "left":
-            self.slide_xaxis(-self.time_window_half_size)
-            self.update_xaxis()
+            if not self.is_tick_selected:
+                self.gui.slide_xaxis(-self.gui.time_window_half_size)
+                self.gui.update_xaxis()
+            else:
+                self.ticks.slide_tick(self.tick_selected_index, -1)
         elif event.key == "up":
-            self.time_window_half_size = max(self.time_window_half_size / 2, 0.1)
-            self.slide_xaxis(0)
-            self.update_xaxis()
-        elif event.key == "down":
-            self.time_window_half_size = min(
-                self.time_window_half_size * 2, self.ts[-1] / 2
+            self.gui.time_window_half_size = max(
+                self.gui.time_window_half_size / 2, 0.1
             )
-            self.slide_xaxis(0)
-            self.update_xaxis()
-        elif event.key == "backspace":
-            line = self.tick_lines.pop()
-            self.ticks.pop()
-            line.remove()
-            self.redraw()
+            self.gui.slide_xaxis(0)
+            self.gui.update_xaxis()
+        elif event.key == "down":
+            self.gui.time_window_half_size = min(
+                self.gui.time_window_half_size * 2, self.gui.ts[-1] / 2
+            )
+            self.gui.slide_xaxis(0)
+            self.gui.update_xaxis()
         elif event.key == " ":
-            self.toggle_audio()
-        elif event.key == "o":
-            if self.audio_process is not None:
-                self.add_tick(time.time() - self.t0, True)
+            self.gui.toggle_audio()
+        elif event.key == "r":
+            if self.gui.audio_process is not None:
+                self.ticks.add_musttick(time.time() - self.gui.t0)
+        elif event.key == "e":
+            if self.gui.audio_process is not None:
+                self.ticks.add_majortick(time.time() - self.gui.t0)
         elif event.key == "w":
-            if self.audio_process is not None:
-                self.add_tick(time.time() - self.t0, False)
+            if self.gui.audio_process is not None:
+                self.ticks.add_minortick(time.time() - self.gui.t0)
+        elif event.key == "a":
+            self.gui.ticks.find_ticks()
+        elif event.key == "backspace":
+            if self.is_tick_selected:
+                self.ticks.delete_tick(self.tick_selected_index)
+                self.is_tick_selected = False
         elif event.key == "t":
-            self.ticks.find_ticks()
+            if self.is_tick_selected:
+                self.tick_selected_index = self.ticks.toggle_tick(
+                    self.tick_selected_index
+                )
+
+        self.gui.redraw()
 
 
 if __name__ == "__main__":
-    filename = "/Users/jtiosue/Documents/Photos/audio/take-yours.wav"
-    # filename = "/Users/jtiosue/Documents/Photos/audio/submarines.wav"
+    # filename = "/Users/jtiosue/Documents/Photos/audio/take-yours.wav"
+    filename = "/Users/jtiosue/Documents/Photos/audio/submarines.wav"
     GUI(filename).show()
