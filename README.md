@@ -31,6 +31,7 @@ For each of the commands (except for `parse` and `audioticks`), you can supply o
 
 ## To do
 
+- Add `musttick`. Whenever there is a musttick, make autoschedule _force_ a transition. Do this by just cutting the current video and jumping a second forward.
 - Fade text, `bg_color` needs to be transparent: [https://github.com/Zulko/moviepy/issues/400](https://github.com/Zulko/moviepy/issues/400). Possibly use masks?
 - Zoom out currently loses a frame. Fix this. Also, allow different zoom speeds.
 - Just recode zoom entirely. I think resize messes with resolution stuff.
