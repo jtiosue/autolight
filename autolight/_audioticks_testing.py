@@ -2,8 +2,10 @@ import matplotlib.pyplot as plt
 from scipy.io.wavfile import read as read_wav
 import numpy as np
 import os, time
-from playsound import playsound
-import multiprocessing
+
+# from playsound import playsound
+# import multiprocessing
+from nava import play as playsound, stop as stopsound
 
 plt.rcParams["keymap.back"].remove("backspace")
 
@@ -12,7 +14,7 @@ plt.rcParams["keymap.back"].remove("backspace")
 
 
 def convolve_audio(audio, filter):
-    return np.convolve(audio, filter)[: -len(filter) + 1]
+    return np.convolve(audio, filter, mode="same")  # [: -len(filter) + 1]
 
 
 def hl_envelopes_idx(s, dmin=1, dmax=1, split=False):
@@ -169,8 +171,10 @@ class Ticks(list):
             if t - ts[0] > 0.05:
                 break
 
-        l = np.concatenate((np.linspace(0, 1, i // 4), np.linspace(1, 0, i // 4)))
+        # l = np.concatenate((np.linspace(0, 1, i // 4), np.linspace(1, 0, i // 4)))
+        l = [0, 0, 0, 0, 0, 1, 1, 1, 1]
         caudio = convolve_audio(audio, l / np.sum(l))
+        # self.ax.plot(ts, caudio, "-", color="red")
 
         dt = (ts[1] - ts[0]) / 2.0
 
@@ -179,23 +183,28 @@ class Ticks(list):
             if audio[i] > 2 * caudio[i]:
                 mean = np.mean(audio[max(0, i - 10) : i]) if i else 0
                 if (
-                    audio[i] > 7 * mean
-                    and audio[i] > 7 * caudio[i]
-                    and t - last_t_must > 0.2
+                    # audio[i] > 7 * mean
+                    # and
+                    audio[i]
+                    > 7 * caudio[i]
+                    # and t - last_t_must > 0.2
                 ):
                     last_t_must = t
                     last_t_major = t
                     last_t_minor = t
                     self.add_tick(t - dt, Tick.must)
                 elif (
-                    audio[i] > 5 * mean
-                    and audio[i] > 5 * caudio[i]
-                    and t - last_t_major > 0.2
+                    # audio[i] > 5 * mean
+                    # and
+                    audio[i]
+                    > 5 * caudio[i]
+                    # and t - last_t_major > 0.2
                 ):
                     last_t_major = t
                     last_t_minor = t
                     self.add_tick(t - dt, Tick.major)
-                elif t - last_t_minor > 0.2:
+                # elif t - last_t_minor > 0.2:
+                else:
                     last_t_minor = t
                     self.add_tick(t - dt, Tick.minor)
 
@@ -211,12 +220,16 @@ class AudioPlot:
         lmin, lmax = hl_envelopes_idx(self.audio, dmin=10, dmax=10, split=True)
 
         self.audio = self.audio[lmax]
-        self.audio = convolve_audio(self.audio, [1 / 2, 1, 1 / 2])
+        # l = np.concatenate((np.linspace(0, 1, 5), np.linspace(1, 0, 5)))
+        l = np.concatenate((np.geomspace(0.1, 1, 5), np.geomspace(1, 0.1, 5)))
+        # l = [1 / 2, 1, 1 / 2]
+        self.audio = convolve_audio(self.audio, l / np.sum(l))
 
         self.audio = self.audio / np.max(self.audio)
         self.ts = self.ts[lmax]
 
         self.fig = plt.figure()
+        self.fig.set_size_inches(12, 10)
         plt.plot(self.ts, self.audio, "b")
         # plt.plot(
         #     self.ts[lmin],
@@ -281,17 +294,21 @@ class AudioPlot:
             #     target=playsound, args=(self.filename,)
             # )
             # self.audio_process.start()
-            self.audio_process = 1
-            playsound(self.filename, False)
-            self.t0 = time.time() + 0.08
+            self.audio_process = playsound(self.filename, True)
+            # playsound(self.filename, False)
+            self.t0 = time.time() + 0.37
             while self.audio_process is not None:
-                plt.pause(1 / 15.0)
+                plt.pause(1 / 30.0)
                 self.current_time = time.time() - self.t0
                 self.update_current_time()
                 self.slide_xaxis()
                 self.update_xaxis()
         else:
-            # self.audio_process.terminate()
+            self.stop_audio()
+
+    def stop_audio(self):
+        if self.audio_process is not None:
+            stopsound(self.audio_process)
             self.audio_process = None
 
 
@@ -421,6 +438,7 @@ class GUI:
 
     def mainloop(self):
         self.audioplot.show()
+        # self.audioplot.stop_audio()
         print(self.ticks.pretty_str())
 
 
@@ -452,7 +470,7 @@ class GUI:
 
 if __name__ == "__main__":
     # filename = "/Users/jtiosue/Documents/Photos/audio/take-yours.wav"
-    # filename = "/Users/jtiosue/Documents/Photos/audio/submarines.wav"
-    filename = "/Users/jtiosue/Documents/Photos/audio/christmas-lights.wav"
+    filename = "/Users/jtiosue/Documents/Photos/audio/submarines.wav"
+    # filename = "/Users/jtiosue/Documents/Photos/audio/christmas-lights.wav"
     GUI(filename).mainloop()
     # make it so ticks can be read in.
