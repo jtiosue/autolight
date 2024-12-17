@@ -69,18 +69,23 @@ class Tick:
         self.plot()
 
     def plot(self):
+        self.remove()
         self.vline = self.ax.axvline(
             self.tick_time,
             linestyle=Tick.type_to_linestyle[self.tick_type],
             color=self.color,
         )
 
+    def draw_artist(self):
+        self.ax.draw_artist(self.vline)
+
     def toggle_type(self):
         self.tick_type = Tick.toggle_type_order[self.tick_type]
         self.vline.set_linestyle(Tick.type_to_linestyle[self.tick_type])
 
     def remove(self):
-        self.vline.remove()
+        if self.vline is not None:
+            self.vline.remove()
 
     def set_color(self, color):
         self.color = color
@@ -88,7 +93,6 @@ class Tick:
 
     def set_time(self, tick_time):
         self.tick_time = tick_time
-        self.remove()
         self.plot()
 
     def shift(self, direction, amount=0.01):
@@ -167,6 +171,21 @@ class Ticks(list):
         self.append(Tick(tick_time, tick_type, self.ax))
 
     def find_ticks(self, ts, audio):
+        from scipy.signal import find_peaks
+
+        peaks, properties = find_peaks(audio, prominence=0.3, width=20)
+        prominences = properties["prominences"]
+        widths = properties["widths"]
+        for peak, prominence, width in zip(peaks, prominences, widths):
+            if prominence > 0.8:
+                self.add_tick(ts[peak], Tick.must)
+            elif prominence > 0.5:
+                self.add_tick(ts[peak], Tick.major)
+            # elif prominence > 0.3:
+            else:
+                self.add_tick(ts[peak], Tick.minor)
+        return
+
         for i, t in enumerate(ts):
             if t - ts[0] > 0.05:
                 break
@@ -218,6 +237,7 @@ class AudioPlot:
         # self.audio = self.audio / np.max(np.abs(self.audio))
 
         lmin, lmax = hl_envelopes_idx(self.audio, dmin=10, dmax=10, split=True)
+        # lmin, lmax = hl_envelopes_idx(self.audio, dmin=20, dmax=20, split=True)
 
         self.audio = self.audio[lmax]
         # l = np.concatenate((np.linspace(0, 1, 5), np.linspace(1, 0, 5)))
@@ -228,15 +248,14 @@ class AudioPlot:
         self.audio = self.audio / np.max(self.audio)
         self.ts = self.ts[lmax]
 
-        self.fig = plt.figure()
+        self.fig, self.ax = plt.subplots()
         self.fig.set_size_inches(12, 10)
-        plt.plot(self.ts, self.audio, "b")
+        self.ax.plot(self.ts, self.audio, "-", color="blue")
         # plt.plot(
         #     self.ts[lmin],
         # convolve(self.audio[lmin], l / np.sum(l))
         #     "b",
         # )
-        self.ax = self.fig.get_axes()[0]
 
         self.ax.set_ylabel("Amplitude")
         self.ax.set_xlabel("Time (seconds)")
@@ -252,10 +271,8 @@ class AudioPlot:
         self.t0, self.audio_process = None, None
 
         self.current_time = 0
-        self.current_time_bar = Tick(-1, Tick.must, self.ax)
+        self.current_time_bar = Tick(0, Tick.must, self.ax)
         self.current_time_bar.set_color("orange")
-
-        self.redraw()
 
     def update_xaxis(self):
         self.ax.set_xlim(
@@ -271,6 +288,7 @@ class AudioPlot:
             ),
             self.time_window_half_size,
         )
+        # self.current_center = max(0, min(self.current_center + increment, self.ts[-1]))
 
     def update_current_time(self):
         self.current_time_bar.set_time(self.current_time)
@@ -286,7 +304,8 @@ class AudioPlot:
         plt.show()
 
     def redraw(self):
-        plt.draw()
+        # plt.draw()
+        self.fig.canvas.draw()
 
     def toggle_audio(self):
         if self.audio_process is None:
@@ -298,13 +317,14 @@ class AudioPlot:
             # playsound(self.filename, False)
             self.t0 = time.time() + 0.37
             while self.audio_process is not None:
-                plt.pause(1 / 30.0)
+                plt.pause(1 / 60.0)  # calls redraw
                 self.current_time = time.time() - self.t0
                 self.update_current_time()
                 self.slide_xaxis()
                 self.update_xaxis()
         else:
             self.stop_audio()
+            # self.audio_process = None
 
     def stop_audio(self):
         if self.audio_process is not None:
@@ -363,7 +383,7 @@ class GUI:
         else:
             self.ticks.add_tick(event.xdata, Tick.minor)
 
-        self.audioplot.redraw()
+        self.redraw()
 
     # def unclick(self, event):
     #     if not self.is_motion:
