@@ -2,10 +2,13 @@ import matplotlib.pyplot as plt
 from scipy.io.wavfile import read as read_wav
 import numpy as np
 import os, time
+from autolight import parse_file
 
 # from playsound import playsound
 # import multiprocessing
 from nava import play as playsound, stop as stopsound
+
+__all__ = ("audiotweaks",)
 
 plt.rcParams["keymap.back"].remove("backspace")
 
@@ -170,16 +173,25 @@ class Ticks(list):
     def add_tick(self, tick_time, tick_type):
         self.append(Tick(tick_time, tick_type, self.ax))
 
+    def tweak_ticks(self, ts, audio):
+        for tick in self:
+            i = min(range(len(ts)), key=lambda j: abs(ts[j] - tick.tick_time))
+            iold = -1
+            while i != iold:
+                iold = i
+                i = min((max(i - 1, 0), i, min(i + 1, len(ts))), key=lambda j: audio[j])
+            tick.set_time(ts[i])
+
     def find_ticks(self, ts, audio):
         from scipy.signal import find_peaks
 
-        peaks, properties = find_peaks(audio, prominence=0.3, width=20)
+        peaks, properties = find_peaks(audio, prominence=0.4, width=20)
         prominences = properties["prominences"]
         widths = properties["widths"]
         for peak, prominence, width in zip(peaks, prominences, widths):
             if prominence > 0.8:
                 self.add_tick(ts[peak], Tick.must)
-            elif prominence > 0.5:
+            elif prominence > 0.6:
                 self.add_tick(ts[peak], Tick.major)
             # elif prominence > 0.3:
             else:
@@ -230,6 +242,12 @@ class Ticks(list):
 
 class AudioPlot:
     def __init__(self, filename: str) -> None:
+        ext = os.path.splitext(filename)[1]
+        if ext != ".wav":
+            raise ValueError(
+                "Plotting audio is only currently possible with .wav files."
+            )
+
         self.filename = filename
         self.N, audio = read_wav(filename)
         self.audio = audio[:, 0]
@@ -334,8 +352,23 @@ class AudioPlot:
 
 class GUI:
     def __init__(self, filename):
+        ext = os.path.splitext(filename)[1]
+        majorticks, minorticks = [], []
+        if ext == ".py":
+            audioclips, _ = parse_file(
+                os.path.basename(filename), base_directory=os.path.dirname(filename)
+            )
+            audioclip = audioclips[0]
+            filename = audioclip.filename
+            majorticks, minorticks = audioclip.majorticks, audioclip.minorticks
+
         self.audioplot = AudioPlot(filename)
         self.ticks = Ticks(self.audioplot.ax)
+
+        for t in majorticks:
+            self.ticks.add_tick(t, Tick.major)
+        for t in minorticks:
+            self.ticks.add_tick(t, Tick.minor)
 
         # self.audioplot.fig.canvas.mpl_connect("key_press_event", self.key_event)
         self.audioplot.fig.canvas.mpl_connect(
@@ -450,6 +483,8 @@ class GUI:
                 selected_tick.toggle_type()
         elif event.key == "p":
             self.panning = not self.panning
+        elif event.key == "m":
+            self.ticks.tweak_ticks(self.audioplot.ts, self.audioplot.audio)
 
         self.redraw()
 
@@ -488,9 +523,14 @@ class GUI:
 #         super().destroy()
 
 
+def audiotweaks(filename: str):
+    GUI(filename).mainloop()
+
+
 if __name__ == "__main__":
     # filename = "/Users/jtiosue/Documents/Photos/audio/take-yours.wav"
-    filename = "/Users/jtiosue/Documents/Photos/audio/submarines.wav"
+    # filename = "/Users/jtiosue/Documents/Photos/audio/take-yours.py"
+    # filename = "/Users/jtiosue/Documents/Photos/audio/submarines.wav"
+    filename = "/Users/jtiosue/Documents/Photos/audio/submarines.py"
     # filename = "/Users/jtiosue/Documents/Photos/audio/christmas-lights.wav"
-    GUI(filename).mainloop()
-    # make it so ticks can be read in.
+    audiotweaks(filename)

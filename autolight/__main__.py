@@ -3,6 +3,7 @@ from autolight import (
     auto_generate_from_file,
     generate_from_file,
     audioticks,
+    audiotweaks,
     parse_and_write_file,
     auto_schedule_from_file,
 )
@@ -15,8 +16,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "command",
         type=str,
-        # help="Must be one of generate, autoschedule, autogenerate (same as running autoschedule and then generate on the new file), audioticks, or parse",
-        choices=["generate", "autogenerate", "autoschedule", "audioticks", "parse"],
+        # help="Must be one of generate, autoschedule, autogenerate (same as running autoschedule and then generate on the new file), audioticks, audiotweaks, or parse",
+        choices=[
+            "generate",
+            "autogenerate",
+            "autoschedule",
+            "audioticks",
+            "audiotweaks",
+            "parse",
+        ],
     )
     parser.add_argument("filename", type=str, help="The file to run the command on")
     parser.add_argument(
@@ -72,3 +80,5 @@ if __name__ == "__main__":
             parse_and_write_file(filename, options)
         case "audioticks":
             audioticks(filename)
+        case "audiotweaks":
+            audiotweaks(filename)

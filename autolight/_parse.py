@@ -1,7 +1,8 @@
 import os
 from . import Clip, CompositeClip, VideoClips, AudioClips
 from typing import Tuple
-import re
+
+# import re
 
 __all__ = "File", "parse_file", "write_file", "parse_and_write_file"
 
@@ -80,8 +81,16 @@ def write_file(
         for c, end in audio.iter_with_endpoints():
             print(str(c), ", ", file=f)
             print("#", to_hms(round(end, 2)), audio.tick_type(end), file=f)
-        print("# all majorticks:", [to_hms(x) for x in sorted(audio.rounded_majorticks)], file=f)
-        print("# all minorticks:", [to_hms(x) for x in sorted(audio.rounded_minorticks)], file=f)
+        print(
+            "# all majorticks:",
+            [to_hms(x) for x in sorted(audio.rounded_majorticks)],
+            file=f,
+        )
+        print(
+            "# all minorticks:",
+            [to_hms(x) for x in sorted(audio.rounded_minorticks)],
+            file=f,
+        )
 
         print("\n", file=f)
 

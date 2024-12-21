@@ -110,7 +110,7 @@ class Clip:
         )
 
     def is_audio(self):
-        extensions = {".mp3", ".m4a"}
+        extensions = {".mp3", ".m4a", "wav"}
         return (
             not self.is_text()
             and "filename" in self
@@ -279,8 +279,12 @@ class AudioClips(list):
         self.majorticks, self.minorticks, prev = [], [], 0.0
         for c in self:
             prev += c.padding
-            self.majorticks.extend([prev + x - c.start for x in c.majorticks if c.start <= x <= c.end])
-            self.minorticks.extend([prev + x - c.start for x in c.minorticks if c.start <= x <= c.end])
+            self.majorticks.extend(
+                [prev + x - c.start for x in c.majorticks if c.start <= x <= c.end]
+            )
+            self.minorticks.extend(
+                [prev + x - c.start for x in c.minorticks if c.start <= x <= c.end]
+            )
             prev += c.duration
         self.duration = prev
         self.majorticks = list(sorted(set(self.majorticks)))

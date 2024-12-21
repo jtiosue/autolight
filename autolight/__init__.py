@@ -5,3 +5,4 @@ from ._auto_schedule import *
 from ._moviepy import *
 from ._generate import *
 from ._audioticks import *
+from ._audiotweaks import *
