@@ -31,7 +31,6 @@ For each of the commands (except for `parse` and `audioticks`), you can supply o
 
 ## To do
 
-- With parse, add an option to create a new .py file where all the videos are in one back to back file.
 - Maybe add a clip maker, where each item in the compilation.py file is made into its own individual .mp4 file.
 - Convolve in both directions, and with different size filters
 - Add `musttick`. Whenever there is a musttick, make autoschedule _force_ a transition. Do this by just cutting the current video and jumping a second forward.

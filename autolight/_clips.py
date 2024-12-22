@@ -27,6 +27,7 @@ class Clip:
 
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
+            # maybe to do: setattr(self, k, v.copy()) if v is a list?
             setattr(self, k, v)
 
         self._videostart = self.start
@@ -96,6 +97,7 @@ class Clip:
         setattr(self, key, value)
 
     def copy(self):
+        # return Clip(**self.to_dict())
         return Clip(**self.__dict__)
 
     def is_text(self):
@@ -145,14 +147,19 @@ class Clip:
                 self.start = max(self.start + shave / 2, self._videostart)
                 self.end = min(self.start + new_duration * self.speed, self._videoend)
 
+    def to_dicts(self) -> dict:
+        return {k: v for k, v in self.__dict__.items() if k[0] != "_"}
+
     def __str__(self) -> str:
         # return f"{type(self).__name__}(**{str({k: v for k, v in self.__dict__.items() if k[0] != '_'})})"
-        return str({k: v for k, v in self.__dict__.items() if k[0] != "_"})
+        # return str({k: v for k, v in self.__dict__.items() if k[0] != "_"})
+        return str(self.to_dicts())
 
     def __repr__(self) -> str:
         return str(self)
 
     def items(self):
+        # yield from self.to_dict().items()
         yield from self.__dict__.items()
 
 
@@ -209,9 +216,12 @@ class CompositeClip(Clip):
     def copy(self):
         return CompositeClip([c.copy() for c in self.clips])
 
-    def __str__(self):
-        # return type(self).__name__ + "([" + ", ".join([str(x) for x in self]) + "])"
-        return str([x for x in self])
+    def to_dicts(self) -> list:
+        return [x.to_dicts() for x in self]
+
+    # def __str__(self):
+    #     # return type(self).__name__ + "([" + ", ".join([str(x) for x in self]) + "])"
+    #     return str([x for x in self])
 
     def __iter__(self):
         for c in self.clips:

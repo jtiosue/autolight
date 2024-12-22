@@ -72,10 +72,10 @@ def write_file(
     output_filename: str,
     audio: AudioClips = None,
     video: VideoClips = None,
-    compiled: str = "",
+    compiled: bool = False,
 ):
-    if compiled:
-        raise NotImplementedError("Compiled parse not implemented yet")
+    # if compiled:
+    #     raise NotImplementedError("Compiled parse not implemented yet")
 
     if not audio:
         audio = AudioClips([])
@@ -100,14 +100,22 @@ def write_file(
 
         print("\n", file=f)
 
+        prev_end = 0
         for c, end in video.iter_with_endpoints():
+            if compiled:
+                c = c.to_dicts()
+                ce = c[0] if isinstance(c, list) else c
+                ce["filename"] = output_filename.rsplit(".", 1)[0] + ".mp4"
+                ce["start"] = prev_end
+                ce["end"] = end
+                ce["speed"] = 1
+                prev_end = end
             print(str(c), ", ", file=f)
             print("#", to_hms(round(end, 2)), audio.tick_type(end), file=f)
         print("]", file=f)
 
 
-def parse_and_write_file(filename: str, options: dict = None):
-    compiled = options.pop("compiled") if "compiled" in options else ""
+def parse_and_write_file(filename: str, options: dict = None, compiled: bool = False):
     audio, video = parse_file(filename, options)
     write_file("parsed_" + filename, audio, video, compiled)
 

@@ -1,0 +1,5 @@
+[
+    dict(filename='filename in folder1', start=2, end=5),
+    File("folder2/file3.txt", volume=0),
+    dict(filename="filename again in folder1", trim='none', end=2)
+]

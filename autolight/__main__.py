@@ -61,8 +61,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--compiled",
-        type=str,
-        help="Whether to parse file into big compiled video named by `compiled` or not",
+        action="store_true",
+        help="Whether to parse file into big compiled video or not",
     )
 
     args = vars(parser.parse_args())
@@ -73,6 +73,7 @@ if __name__ == "__main__":
     for k in ("debug", "resize", "trimmable"):
         if not options[k]:
             options.pop(k)
+    compiled = options.pop("compiled", False)
 
     match command:
         case "generate":
@@ -82,7 +83,7 @@ if __name__ == "__main__":
         case "autoschedule":
             auto_schedule_from_file(filename, options)
         case "parse":
-            parse_and_write_file(filename, options)
+            parse_and_write_file(filename, options, compiled)
         case "audioticks":
             audioticks(filename)
         case "audiotweaks":
