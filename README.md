@@ -31,7 +31,9 @@ For each of the commands (except for `parse` and `audioticks`), you can supply o
 
 ## To do
 
-- I currently have `nava` and `playsound`. Decide which one to use and remove the other one.
+- With parse, add an option to create a new .py file where all the videos are in one back to back file.
+- Maybe add a clip maker, where each item in the compilation.py file is made into its own individual .mp4 file.
+- Convolve in both directions, and with different size filters
 - Add `musttick`. Whenever there is a musttick, make autoschedule _force_ a transition. Do this by just cutting the current video and jumping a second forward.
 - Make autoaudioticks better. Maybe use [Essentia](https://essentia.upf.edu/tutorial_rhythm_beatdetection.html). or maybe [this](https://mziccard.me/2015/05/28/beats-detection-algorithms-1/#:~:text=The%20algorithm%20divides%20the%20data,considered%20to%20contain%20a%20beat.), although I basically already do this.
 - Fade text, `bg_color` needs to be transparent: [https://github.com/Zulko/moviepy/issues/400](https://github.com/Zulko/moviepy/issues/400). Possibly use masks?

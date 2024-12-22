@@ -3,9 +3,6 @@ from scipy.io.wavfile import read as read_wav
 import numpy as np
 import os, time
 from autolight import parse_file
-
-# from playsound import playsound
-# import multiprocessing
 from nava import play as playsound, stop as stopsound
 
 __all__ = ("audiotweaks",)

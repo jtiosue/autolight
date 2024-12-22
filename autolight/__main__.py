@@ -59,6 +59,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Whether to make videos trimmable for autoscheduling",
     )
+    parser.add_argument(
+        "--compiled",
+        type=str,
+        help="Whether to parse file into big compiled video named by `compiled` or not",
+    )
 
     args = vars(parser.parse_args())
     command = args.pop("command")

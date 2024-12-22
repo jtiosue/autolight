@@ -69,8 +69,14 @@ def parse_file(
 
 
 def write_file(
-    output_filename: str, audio: AudioClips = None, video: VideoClips = None
+    output_filename: str,
+    audio: AudioClips = None,
+    video: VideoClips = None,
+    compiled: str = "",
 ):
+    if compiled:
+        raise NotImplementedError("Compiled parse not implemented yet")
+
     if not audio:
         audio = AudioClips([])
     if not video:
@@ -101,8 +107,9 @@ def write_file(
 
 
 def parse_and_write_file(filename: str, options: dict = None):
+    compiled = options.pop("compiled") if "compiled" in options else ""
     audio, video = parse_file(filename, options)
-    write_file("parsed_" + filename, audio, video)
+    write_file("parsed_" + filename, audio, video, compiled)
 
 
 def to_seconds(t):
