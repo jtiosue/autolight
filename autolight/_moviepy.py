@@ -1,7 +1,19 @@
-from . import VideoClips, AudioClips, Clip, CompositeClip, get_file_info
+from . import (
+    VideoClips,
+    AudioClips,
+    Clip,
+    CompositeClip,
+    get_file_info,
+    remove_filename_extension,
+    write_file,
+)
 
 
-__all__ = "generate_file_moviepy", "generate_clip_moviepy"
+__all__ = (
+    "generate_file_moviepy",
+    "generate_file_clips_moviepy",
+    "generate_clip_moviepy",
+)
 
 RESOLUTION_WIDTHS = {240: 426, 360: 640, 480: 854, 540: 960, 720: 1280, 1080: 1920}
 
@@ -64,6 +76,42 @@ def generate_file_moviepy(
     elif mp_audio:
         mp_audio = mp.concatenate_audioclips(mp_audio)
         mp_audio.write_audiofile(output_filename + ".mp3")
+
+
+def generate_file_clips_moviepy(
+    output_filename: str, audio: AudioClips = None, video: VideoClips = None
+) -> None:
+    # changes the clips in place
+
+    clips = 0
+
+    for i in range(len(video)):
+        c = video[i]
+        vid = generate_clip_moviepy(c)
+        clips += 1
+        new_filename = f"clip{clips}_{remove_filename_extension(c.filename)}.mp4"
+        vid.write_videofile(
+            new_filename,
+            # fps=24,
+            # threads=16?,
+            temp_audiofile="temp-audio.m4a",
+            remove_temp=True,
+            codec="libx264",
+            audio_codec="aac",
+        )
+        vid.close()
+        if isinstance(c, CompositeClip):
+            c = c.clips[0]
+            video[i] = c
+        duration = c.duration
+        c.filename = new_filename
+        c.__dict__.pop("start", None)
+        c.__dict__.pop("end", None)
+        c.__dict__.pop("speed", None)
+        c.__dict__.pop("duration", None)
+        c.end = duration
+
+    write_file(output_filename + "_clips.py", audio, video)
 
 
 def concatenate_with_padding(clip1, clip2, padding, audio=False, after=True):
@@ -255,7 +303,9 @@ def generate_clip_moviepy(clip: Clip):
                 y_speed *= -1
             case "center":
                 x_speed, y_speed = 0, 0
-                x_start, y_start = round(xmax / 2) if xmax != -1 else -1, round(ymax / 2) if ymax != -1 else -1
+                x_start, y_start = round(xmax / 2) if xmax != -1 else -1, (
+                    round(ymax / 2) if ymax != -1 else -1
+                )
             case "north":
                 x_speed, y_speed = 0, 0
                 x_start, y_start = round(xmax / 2) if xmax != -1 else -1, 0
@@ -307,8 +357,14 @@ def generate_clip_moviepy(clip: Clip):
         if clip.zoom == "in":
             mp_elem = mp_elem.resize(lambda t: 1 + 0.1 * t)
         elif clip.zoom == "out":
-            mp_elem = mp_elem.resize(lambda t: 1 if not t else 1 + 0.1 * (mp_elem.duration - t))
-            mp_elem = mp.CompositeVideoClip([mp_elem.set_position(('center', 'center'))]).subclip(.01)#.subclip(1./getattr(mp_elem, "fps", 60))
+            mp_elem = mp_elem.resize(
+                lambda t: 1 if not t else 1 + 0.1 * (mp_elem.duration - t)
+            )
+            mp_elem = mp.CompositeVideoClip(
+                [mp_elem.set_position(("center", "center"))]
+            ).subclip(
+                0.01
+            )  # .subclip(1./getattr(mp_elem, "fps", 60))
         else:
             mp_elem = mp_elem.resize(clip.zoom)
 

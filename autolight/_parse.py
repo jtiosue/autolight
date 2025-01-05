@@ -1,5 +1,5 @@
 import os
-from . import Clip, CompositeClip, VideoClips, AudioClips
+from . import Clip, CompositeClip, VideoClips, AudioClips, remove_filename_extension
 from typing import Tuple
 
 # import re
@@ -105,10 +105,10 @@ def write_file(
             if compiled:
                 c = c.to_dicts()
                 ce = c[0] if isinstance(c, list) else c
-                ce["filename"] = output_filename.rsplit(".", 1)[0] + ".mp4"
+                ce["filename"] = remove_filename_extension(output_filename) + ".mp4"
                 ce["start"] = prev_end
                 ce["end"] = end
-                ce["speed"] = 1
+                ce.pop("speed", None)
                 prev_end = end
             print(str(c), ", ", file=f)
             print("#", to_hms(round(end, 2)), audio.tick_type(end), file=f)

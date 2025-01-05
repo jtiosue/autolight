@@ -64,6 +64,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Whether to parse file into big compiled video or not",
     )
+    parser.add_argument(
+        "--clips",
+        action="store_true",
+        help="When generating, whether to generate all separate clips",
+    )
 
     args = vars(parser.parse_args())
     command = args.pop("command")
@@ -74,10 +79,11 @@ if __name__ == "__main__":
         if not options[k]:
             options.pop(k)
     compiled = options.pop("compiled", False)
+    clips = options.pop("clips", False)
 
     match command:
         case "generate":
-            generate_from_file(filename, options)
+            generate_from_file(filename, options, clips)
         case "autogenerate":
             auto_generate_from_file(filename, options)
         case "autoschedule":

@@ -148,7 +148,7 @@ class Clip:
                 self.end = min(self.start + new_duration * self.speed, self._videoend)
 
     def to_dicts(self) -> dict:
-        return {k: v for k, v in self.__dict__.items() if k[0] != "_"}
+        return {k: v for k, v in self.items() if k[0] != "_"}
 
     def __str__(self) -> str:
         # return f"{type(self).__name__}(**{str({k: v for k, v in self.__dict__.items() if k[0] != '_'})})"

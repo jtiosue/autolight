@@ -1,6 +1,13 @@
 import subprocess
 
-__all__ = ("get_file_info",)
+__all__ = ("get_file_info", "remove_filename_extension")
+
+
+def remove_filename_extension(filename):
+    # r = filename[::-1]
+    # i = r.index(".") + 1
+    # return filename[:-i]
+    return filename.rsplit(".", 1)[0]
 
 
 def get_file_info(filename: str, info: str) -> float:

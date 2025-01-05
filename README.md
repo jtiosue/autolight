@@ -2,13 +2,13 @@
 
 Automatically make compilation highlight videos
 
-- `python -m autolight audioticks filename.mp3` to generate a list of major and minor transition points.
 - `python -m autolight parse filename.py` to take a list of audio and video clips and parse it into a nicer format with duration details.
 - `python -m autolight generate filename.py` to take a list of audio and video clips and generate an mp4 from it.
 - `python -m autolight autoschedule filename.py` to take a list of audio and video clips and generate a new `auto_filename.py` from it that is nicely compiled to the audio. You can then create the new video with `python -m autolight generate auto_filename.py`.
 - `python -m autolight autogenerate filename.py` simply runs `python -m autolight autoschedule filename.py && python -m autolight generate auto_filename.py`.
+- `python -m autolight audiotweaks filename.mp3` *in progress*.
 
-For each of the commands (except for `parse` and `audioticks`), you can supply optional keyword arguments; e.g. `--volume 0 --resolution 720 --debug`. See `python -m autolight --help` for details.
+For each of the commands (except `audioticks`), you can supply optional keyword arguments; e.g. `--volume 0 --resolution 720 --debug`. See `python -m autolight --help` for details.
 
 **See `examples/` for how to format `filename.py`.**
 
@@ -26,12 +26,12 @@ For each of the commands (except for `parse` and `audioticks`), you can supply o
 - You can set meta info for a clip with the `info="stuff"` keyword argument. If you run autolight in debug mode, `"stuff"` will automatically appear in the upper right hand corner. In debug mode, resolution will automatically be set to 240 and fps to 10 unless they are manually specified in the file.
 - `pan=` up, down, left, or right dynamically pans in those directions. On the other hand, `pan=` north, south, east, west, center keeps it stationary on the top, bottom, right, left, or center of the image/video. Use these options if your image or video is not the correct aspect ratio.
 - For autoschedule, you can utilize the `trimmable` and `trim` keywords. `trimmable` is a boolean (defaults to `True`) specifying whether the autoscheduling algorithm is allowed to trim the video. If you set `trimmable=False`, then the video will only be trimmed a very little bit; just enough to time it with an audiotick. Whether `trimmable=True` or `False`, if the clip is trimmed at all, it will be trimmed based off of `trim`. `trim` can be `'symmetric'` (default), `'start'`, or `'end'`. These specify where to trim the video if the algorithm decides to trim it.
-- Occationally, transitions between audio clips can glitchy. The reason is [here](https://github.com/Zulko/moviepy/issues/1005) and [here](https://github.com/Zulko/moviepy/issues/1936#issuecomment-1740785869). If it happens, just use `audio_fadein=.25` and/or `audio_fadeout=.25` or whatever durations work.
+- Occasionally, transitions between audio clips can glitchy. The reason is [here](https://github.com/Zulko/moviepy/issues/1005) and [here](https://github.com/Zulko/moviepy/issues/1936#issuecomment-1740785869). If it happens, just use `audio_fadein=.25` and/or `audio_fadeout=.25` or whatever durations work.
+- To make clips instead of a big compilation file, use `python -m autolight generate filename --clips`.
 
 
 ## To do
 
-- Maybe add a clip maker, where each item in the compilation.py file is made into its own individual .mp4 file.
 - Convolve in both directions, and with different size filters
 - Add `musttick`. Whenever there is a musttick, make autoschedule _force_ a transition. Do this by just cutting the current video and jumping a second forward.
 - Make autoaudioticks better. Maybe use [Essentia](https://essentia.upf.edu/tutorial_rhythm_beatdetection.html). or maybe [this](https://mziccard.me/2015/05/28/beats-detection-algorithms-1/#:~:text=The%20algorithm%20divides%20the%20data,considered%20to%20contain%20a%20beat.), although I basically already do this.
