@@ -4,6 +4,7 @@ from autolight import (
     generate_from_file,
     audioticks,
     audiotweaks,
+    videoticks,
     parse_and_write_file,
     auto_schedule_from_file,
 )
@@ -23,6 +24,7 @@ if __name__ == "__main__":
             "autoschedule",
             "audioticks",
             "audiotweaks",
+            "videoticks",
             "parse",
         ],
     )
@@ -94,3 +96,5 @@ if __name__ == "__main__":
             audioticks(filename)
         case "audiotweaks":
             audiotweaks(filename)
+        case "videoticks":
+            videoticks(filename)

@@ -32,6 +32,7 @@ For each of the commands (except `audioticks`), you can supply optional keyword 
 
 ## To do
 
+- Look into [`av` python library](https://pyav.basswood-io.com/docs/stable/index.html).
 - Convolve in both directions, and with different size filters
 - Add `musttick`. Whenever there is a musttick, make autoschedule _force_ a transition. Do this by just cutting the current video and jumping a second forward.
 - Make autoaudioticks better. Maybe use [Essentia](https://essentia.upf.edu/tutorial_rhythm_beatdetection.html). or maybe [this](https://mziccard.me/2015/05/28/beats-detection-algorithms-1/#:~:text=The%20algorithm%20divides%20the%20data,considered%20to%20contain%20a%20beat.), although I basically already do this.

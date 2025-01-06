@@ -6,3 +6,4 @@ from ._moviepy import *
 from ._generate import *
 from ._audioticks import *
 from ._audiotweaks import *
+from ._videoticks import *
