@@ -30,16 +30,4 @@ For each of the commands (except `audioticks`), you can supply optional keyword 
 - To make clips instead of a big compilation file, use `python -m autolight generate filename --clips`.
 
 
-## To do
-
-- Look into [`av` python library](https://pyav.basswood-io.com/docs/stable/index.html).
-- Convolve in both directions, and with different size filters
-- Add `musttick`. Whenever there is a musttick, make autoschedule _force_ a transition. Do this by just cutting the current video and jumping a second forward.
-- Make autoaudioticks better. Maybe use [Essentia](https://essentia.upf.edu/tutorial_rhythm_beatdetection.html). or maybe [this](https://mziccard.me/2015/05/28/beats-detection-algorithms-1/#:~:text=The%20algorithm%20divides%20the%20data,considered%20to%20contain%20a%20beat.), although I basically already do this.
-- Fade text, `bg_color` needs to be transparent: [https://github.com/Zulko/moviepy/issues/400](https://github.com/Zulko/moviepy/issues/400). Possibly use masks?
-- Zoom out currently loses a frame. Fix this. Also, allow different zoom speeds.
-- Just recode zoom entirely. I think resize messes with resolution stuff.
-- I think width/height doesn't work. Only resolution works. That might be because I still need to keep `concatenate_videos` with `method='compose`. Not sure.
-- Instead of needing to supply `portrait=True`, somehow check to see if moviepy automatically rotated the image/video for some reason.
-- Add option to allow portrait images to have their black sides.
-- Allow a video option to be audio fade in. More generally, allow an option so that during a certain video or a certain part of a video, the music fades out a little while the audio from the video fade in a little, and then fades out while the music fades back in. The way to do this is probably to allow a Clip to have `fadeout_audio`, `fadein_audio`, and `bg_audio_volume`. The `fadeout_audio` option fades out the audio from the video, and similarly for fadein. The `bg_audio_volume` fades out the the background audio to that volume, then keeps it there for the duration of the video clip, then fades the background audio back in to its original volume. We just need to get the timing of the video clip, then split the audio at that time and work with the audio.
+See [ideas.md](ideas.md) for to-do's and ideas.
