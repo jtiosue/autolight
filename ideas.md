@@ -21,6 +21,7 @@
 ## FFMPEG
 - Nice [intro](https://alexandrehtrb.github.io/posts/2025/01/introduction-to-ffmpeg/) to ffmpeg
 - `ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 input.mp4` to get resolution
+- Ken burns: https://mko.re/blog/ken-burns-ffmpeg/
 
 
 
