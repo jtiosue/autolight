@@ -8,12 +8,17 @@ from autolight import (
     parse_and_write_file,
     auto_schedule_from_file,
 )
+from importlib.metadata import version as _version
+VERSION = _version('autolight')
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(
         prog="autolight",
         description="Run autolight functionality. Optional arguments are supplied globally to all clips",
     )
+    parser.add_argument('-v', '--version', action='version', version=VERSION)
+
     parser.add_argument(
         "command",
         type=str,

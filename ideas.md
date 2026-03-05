@@ -20,9 +20,103 @@
 
 ## FFMPEG
 - Nice [intro](https://alexandrehtrb.github.io/posts/2025/01/introduction-to-ffmpeg/) to ffmpeg
-- [Speed up video without changing audio pitch](https://ffmpegbyexample.com/examples/749f6u35/timestretch_audio_and_video_using_rubberband_filter/)
-- [Create video from image](https://stackoverflow.com/questions/24961127/how-to-create-a-video-from-images-with-ffmpeg). `ffmpeg -framerate 1/3 -start_number 0 -i test_%d.png -vcodec mpeg4 test.mp4` for three seconds for each image. Can do zoom and zoompan, etc.
-- Get video duration: `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 filename.filetype`
+- `ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 input.mp4` to get resolution
+
+
+
+```bash
+cmd=(
+ffmpeg 
+
+-ss 0 -to 5 -i v0.mp4 
+-ss 3 -to 9 -i v1.mp4 
+-ss 2 -to 4 -i v2.mp4
+
+# -loop 1 -t 3 
+-i image.png
+-f lavfi -t 10 -i anullsrc=channel_layout=stereo:sample_rate=44100
+
+-filter_complex "
+
+[0:v]fps=30,setpts=PTS-STARTPTS[v0f];
+[1:v]fps=30,setpts=PTS-STARTPTS[v1f];
+[2:v]fps=30,setpts=PTS-STARTPTS[v2f];
+
+[0:a]aresample=44100[a0f];
+[1:a]aresample=44100[a1f];
+[2:a]aresample=44100[a2f];
+[4:a]atrim=0:3,aresample=44100[a4f];
+
+[v1f]setpts=0.5*PTS,fps=30[v1];
+[a1f]atempo=2.0,aresample=44100[a1];
+
+[a2f]volume=0[a2];
+
+[3:v]zoompan=
+  x='iw-iw/zoom':
+  y='ih-ih/zoom':
+  z='zoom+0.002':d=30*3:s=2000x2048,
+crop=
+  w=1920:h=1080,
+  fps=30[v3];
+
+[v0f][v1]xfade=transition=fade:duration=1:offset=4[v01];
+[a0f][a1]acrossfade=d=1[a01];
+
+[v01][a01][v2f][a2][v3][a4f][v01][a01]concat=n=4:v=1:a=1[v][a];
+
+" 
+
+-map "[v]" -map "[a]" 
+
+# suposed to speed it up, but I think only works on mac? 
+-c:v h264_videotoolbox -c:a aac 
+
+output.mp4
+)
+
+"${cmd[@]}"
+
+```
+
+
+From moviepy ffmpeg_tools.py:
+
+```python
+def ffmpeg_extract_subclip(filename, t1, t2, targetname=None):
+    """ Makes a new video file playing video file ``filename`` between
+        the times ``t1`` and ``t2``. """
+    name, ext = os.path.splitext(filename)
+    if not targetname:
+        T1, T2 = [int(1000*t) for t in [t1, t2]]
+        targetname = "%sSUB%d_%d.%s" % (name, T1, T2, ext)
+    
+    cmd = [get_setting("FFMPEG_BINARY"),"-y",
+           "-ss", "%0.2f"%t1,
+           "-i", filename,
+           "-t", "%0.2f"%(t2-t1),
+           "-map", "0", "-vcodec", "copy", "-acodec", "copy", targetname]
+    
+    subprocess_call(cmd)
+
+
+def ffmpeg_merge_video_audio(video,audio,output, vcodec='copy',
+                             acodec='copy', ffmpeg_output=False,
+                             logger = 'bar'):
+    """ merges video file ``video`` and audio file ``audio`` into one
+        movie file ``output``. """
+    cmd = [get_setting("FFMPEG_BINARY"), "-y", "-i", audio,"-i", video,
+             "-vcodec", vcodec, "-acodec", acodec, output]
+             
+    subprocess_call(cmd, logger = logger)
+    
+
+def ffmpeg_extract_audio(inputfile,output,bitrate=3000,fps=44100):
+    """ extract the sound from a video file and save it in ``output`` """
+    cmd = [get_setting("FFMPEG_BINARY"), "-y", "-i", inputfile, "-ab", "%dk"%bitrate,
+         "-ar", "%d"%fps, output]
+    subprocess_call(cmd)
+```
 
 
 
