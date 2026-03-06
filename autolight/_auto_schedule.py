@@ -13,6 +13,10 @@ def auto_schedule(audio: AudioClips, video: VideoClips) -> None:
     if not video or not audio:
         return
 
+    mustticks = audio.mustticks
+    mustmajorticks = mustticks + audio.majorticks
+    allticks = mustmajorticks + audio.minorticks
+
     video = video.copy()
     video.reverse()
 
@@ -36,11 +40,18 @@ def auto_schedule(audio: AudioClips, video: VideoClips) -> None:
             + 1000 * penalty(x, current_time, c)
         )
 
-        t = min(audio.majorticks, key=dist)
-        tminor = min(audio.minorticks + audio.majorticks, key=dist)
+        tmust = min(mustticks, key=dist)
+        tmajor = min(mustmajorticks, key=dist)
+        tminor = min(allticks, key=dist)
 
-        if dist(t) <= 3:
-            new_duration = t - current_time
+        ### TO DO: IF WE PASSED A MUSTTICK WITHOUT TRANSITIONING,
+        ### MANUALLY SPLIT THE CLIP AND JUMP A SECOND FORWARD
+
+        if dist(tmust) <= 5:
+            new_duration = tmust - current_time
+            c.trim_clip(new_duration - c.padding)
+        elif dist(tmajor) <= 3:
+            new_duration = tmajor - current_time
             c.trim_clip(new_duration - c.padding)
         elif dist(tminor) <= 5:
             new_duration = tminor - current_time
@@ -63,4 +74,9 @@ def penalty(t, current_time, clip):
     # returns 1 if making the clip last until time t is not possible.
     # otherwise returns 0
     duration = t - current_time - clip.padding
-    return int(not (min(1., clip._videoduration / 2) <= duration <= clip._videoduration and t - current_time >= 0.1))
+    return int(
+        not (
+            min(1.0, clip._videoduration / 2) <= duration <= clip._videoduration
+            and t - current_time >= 0.1
+        )
+    )

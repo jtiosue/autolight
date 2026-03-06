@@ -88,6 +88,11 @@ def write_file(
             print(str(c), ", ", file=f)
             print("#", to_hms(round(end, 2)), audio.tick_type(end), file=f)
         print(
+            "# all mustticks:",
+            [to_hms(x) for x in sorted(audio.rounded_mustticks)],
+            file=f,
+        )
+        print(
             "# all majorticks:",
             [to_hms(x) for x in sorted(audio.rounded_majorticks)],
             file=f,
@@ -148,7 +153,7 @@ def convert_keys_to_seconds(line, base_directory):
     for key in ("start", "end", "duration"):
         if key in line:
             line[key] = to_seconds(line[key])
-    for key in ("minorticks", "majorticks"):
+    for key in ("minorticks", "majorticks", "musttick"):
         if key in line:
             line[key] = [to_seconds(x) for x in line[key]]
 

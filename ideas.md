@@ -1,5 +1,5 @@
 ## To do, P0
-- Add `musttick`. Whenever there is a musttick, make autoschedule _force_ a transition. Do this by just cutting the current video and jumping a second forward.
+- Add `musttick`. Whenever there is a musttick, make autoschedule _force_ a transition. Do this by just cutting the current video and jumping a second forward. Everything is already edited in this branch *except* for the to do commented in `_auto_schedule.py`.
 - Zoom out currently loses a frame. Fix this. Also, allow different zoom speeds.
 - Just recode zoom entirely. I think resize messes with resolution stuff.
 - Audio or video cues for auto light. Eg speech to text, cue with “this is cool” or something like that

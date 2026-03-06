@@ -20,6 +20,7 @@ class Clip:
         portrait=False,
         resize=False,
         resolution=720,
+        mustticks=[],
         majorticks=[],
         minorticks=[],
         debug=False,
@@ -38,7 +39,7 @@ class Clip:
             self._videoend = self.end
             self._videoduration = (self._videoend - self._videostart) / self.speed
 
-        for ticks in ("majorticks", "minorticks"):
+        for ticks in ("mustticks", "majorticks", "minorticks"):
             if ticks in self:
                 tickslist = getattr(self, ticks)
                 offset = tickslist[0]
@@ -286,9 +287,12 @@ class AudioClips(list):
         self.compute_ticks()
 
     def compute_ticks(self):
-        self.majorticks, self.minorticks, prev = [], [], 0.0
+        self.mustticks, self.majorticks, self.minorticks, prev = [], [], [], 0.0
         for c in self:
             prev += c.padding
+            self.mustticks.extend(
+                [prev + x - c.start for x in c.mustticks if c.start <= x <= c.end]
+            )
             self.majorticks.extend(
                 [prev + x - c.start for x in c.majorticks if c.start <= x <= c.end]
             )
@@ -297,8 +301,10 @@ class AudioClips(list):
             )
             prev += c.duration
         self.duration = prev
+        self.mustticks = list(sorted(set(self.mustticks)))
         self.majorticks = list(sorted(set(self.majorticks)))
         self.minorticks = list(sorted(set(self.minorticks)))
+        self.rounded_mustticks = set(round(x, 2) for x in self.mustticks)
         self.rounded_majorticks = set(round(x, 2) for x in self.majorticks)
         self.rounded_minorticks = set(round(x, 2) for x in self.minorticks)
 
@@ -331,7 +337,11 @@ class AudioClips(list):
             end = self.duration
         ticks = list(
             sorted(
-                set(x for x in self.majorticks + self.minorticks if start <= x <= end)
+                set(
+                    x
+                    for x in self.mustticks + self.majorticks + self.minorticks
+                    if start <= x <= end
+                )
             )
         )
         if not ticks:
@@ -343,11 +353,14 @@ class AudioClips(list):
 
     def tick_type(self, timestamp):
         """
-        Returns "majortick" if timestamp is a major tick.
+        Returns "musttick" if timestamp is a musttick,
+        "majortick" if timestamp is a major tick.
         "minortick" for a minor tick.
         and "" if it is neither
         """
-        if (t := round(timestamp, 2)) in self.rounded_majorticks:
+        if (t := round(timestamp, 2)) in self.rounded_mustticks:
+            return "musttick"
+        elif t in self.rounded_majorticks:
             return "majortick"
         elif t in self.rounded_minorticks:
             return "minortick"

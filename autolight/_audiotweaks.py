@@ -7,7 +7,10 @@ from nava import play as playsound, stop as stopsound
 
 __all__ = ("audiotweaks",)
 
-plt.rcParams["keymap.back"].remove("backspace")
+try:
+    plt.rcParams["keymap.back"].remove("backspace")
+except ValueError:
+    pass
 
 # import tkinter as tk
 # from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -350,18 +353,24 @@ class AudioPlot:
 class GUI:
     def __init__(self, filename):
         ext = os.path.splitext(filename)[1]
-        majorticks, minorticks = [], []
+        mustticks, majorticks, minorticks = [], [], []
         if ext == ".py":
             audioclips, _ = parse_file(
                 os.path.basename(filename), base_directory=os.path.dirname(filename)
             )
             audioclip = audioclips[0]
             filename = audioclip.filename
-            majorticks, minorticks = audioclip.majorticks, audioclip.minorticks
+            mustticks, majorticks, minorticks = (
+                audioclip.mustticks,
+                audioclip.majorticks,
+                audioclip.minorticks,
+            )
 
         self.audioplot = AudioPlot(filename)
         self.ticks = Ticks(self.audioplot.ax)
 
+        for t in mustticks:
+            self.ticks.add_tick(t, Tick.must)
         for t in majorticks:
             self.ticks.add_tick(t, Tick.major)
         for t in minorticks:
