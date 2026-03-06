@@ -3,6 +3,7 @@
     dict(
         filename="media/audio1.mp3",
         fadein=5,
+        end=110.32,
         majorticks=[
             0,
             6.3,

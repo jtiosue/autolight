@@ -20,9 +20,9 @@ class Clip:
         portrait=False,
         resize=False,
         resolution=720,
-        mustticks=[],
-        majorticks=[],
-        minorticks=[],
+        mustticks=[0],
+        majorticks=[0],
+        minorticks=[0],
         debug=False,
     )
 
