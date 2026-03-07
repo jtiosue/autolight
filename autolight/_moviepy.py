@@ -89,7 +89,7 @@ def generate_file_clips_moviepy(
         c = video[i]
         vid = generate_clip_moviepy(c)
         clips += 1
-        new_filename = f"clip{clips}_{remove_filename_extension(c.filename)}.mp4"
+        new_filename = f"{remove_filename_extension(c.filename)}_clip{clips}.mp4"
         vid.write_videofile(
             new_filename,
             # fps=24,

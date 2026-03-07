@@ -2,7 +2,7 @@
 - Zoom out currently loses a frame. Fix this. Also, allow different zoom speeds.
 - Just recode zoom entirely. I think resize messes with resolution stuff.
 - Audio or video cues for auto light. Eg speech to text, cue with “this is cool” or something like that
-- Just diretly use FFMPEG, see ffmpeg section below
+- Just directly use FFMPEG, see ffmpeg section below
 
 ## To do, P1
 - Look into [`av` python library](https://pyav.basswood-io.com/docs/stable/index.html).
